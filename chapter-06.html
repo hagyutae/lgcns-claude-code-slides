@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>챕터 6 · 기업 보안 | Claude Code 기반 AI Agent 개발 자동화 실무</title>
+<style>
+/* deck theme: 1280x720 설계 캔버스. SKILL.md 의 '프레임 계약' 참조.
+   납품용 HTML 에는 이 파일 전체를 <style> 로 인라인한다. */
+
+:root{
+  --ink:#16150F; --ink-2:#3A382F; --paper:#FBFAF7;
+  --line:#E2DFD5; --accent:#C9603C; --accent-soft:#F6E9E2;
+  --code-bg:#1C1B16; --mute:#8A8779; --dim:#B9B5A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:#4E4C45;}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans CJK KR','Noto Sans KR',system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; font-feature-settings:"tnum";
+}
+
+/* ============ RESPONSIVE SHELL ============
+   설계 캔버스는 1280x720 고정(px 값이 PDF와 1:1로 대응).
+   .stage 가 창 너비를 따라가고, .slide 를 그 비율만큼 scale 한다.
+   인쇄(=PDF) 시에는 scale 을 해제해 원본 1280x720 로 출력. */
+.deck{padding:26px 20px;max-width:1560px;margin:0 auto;}
+.stage{
+  position:relative; width:100%; aspect-ratio:16/9;
+  margin:0 auto 22px; overflow:hidden;
+  box-shadow:0 6px 26px rgba(0,0,0,.28);
+  page-break-after:always; break-after:page;
+}
+.stage:last-child{page-break-after:auto;break-after:auto;margin-bottom:0;}
+.slide{
+  position:absolute; top:0; left:0;
+  width:1280px; height:720px; background:var(--paper); color:var(--ink);
+  overflow:hidden;
+  transform-origin:top left; transform:scale(var(--s,1));
+  display:flex; flex-direction:column;
+  padding:44px 72px 34px;
+}
+
+@page{size:1280px 720px;margin:0;}
+@media print{
+  html,body{background:#fff;}
+  .deck{padding:0;max-width:none;}
+  .stage{width:1280px;height:720px;aspect-ratio:auto;margin:0;box-shadow:none;}
+  .slide{position:relative;transform:none;}
+}
+
+/* header / footer 고정, main 이 남는 높이를 흡수 */
+.hd{
+  flex:0 0 auto; display:flex; justify-content:space-between; align-items:baseline;
+  font-size:14px; letter-spacing:.02em; color:var(--mute);
+}
+.hd .mod{color:var(--accent);font-weight:600;}
+.ft{
+  flex:0 0 auto; display:flex; justify-content:space-between; align-items:flex-end;
+  font-size:13px; color:var(--mute); padding-top:16px;
+}
+.ft .no{font-variant-numeric:tabular-nums;font-size:14px;}
+main{flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
+
+h2.head{
+  flex:0 0 auto; font-size:38px; font-weight:700; letter-spacing:-.015em;
+  line-height:1.3; margin-top:26px;
+  display:flex; align-items:baseline; gap:18px;
+}
+h2.head::after{content:none;}
+.headrule{flex:0 0 auto; width:56px; height:5px; background:var(--accent); margin:18px 0 0;}
+.body{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:26px 0 4px;}
+
+/* ============ TITLE ============ */
+.title-slide{background:var(--ink); color:var(--paper); justify-content:space-between; padding-top:52px;}
+.title-slide::before{content:"";position:absolute;top:0;left:0;width:100%;height:8px;background:var(--accent);}
+.eyebrow{font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+.title-slide h1{font-size:58px;line-height:1.22;font-weight:800;letter-spacing:-.02em;margin-top:24px;}
+.title-slide .sub{margin-top:28px;font-size:20px;color:var(--dim);line-height:1.6;}
+.title-slide .center{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;}
+.title-slide .meta{
+  flex:0 0 auto; display:flex; gap:44px; font-size:15px; color:#8D8A7C;
+  border-top:1px solid #34322A; padding-top:20px;
+}
+.title-slide .meta b{color:var(--paper);font-weight:600;display:block;margin-bottom:5px;font-size:16px;}
+
+/* ============ SECTION DIVIDER ============ */
+.section{background:var(--ink);color:var(--paper);justify-content:center;}
+.section .row{display:flex;justify-content:space-between;align-items:flex-start;}
+.section .num{font-size:140px;font-weight:800;color:var(--accent);line-height:.9;letter-spacing:-.04em;}
+.section .time{font-size:18px;color:#8D8A7C;border:1px solid #45423A;border-radius:6px;padding:9px 18px;}
+.section h2{font-size:48px;font-weight:700;letter-spacing:-.015em;margin-top:42px;}
+.section .items{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px;}
+.section .items span{border:1px solid #45423A;border-radius:999px;padding:9px 20px;font-size:16px;color:#C6C2B3;}
+
+/* ============ CONTENT PARTS ============ */
+ul.pts{list-style:none;}
+ul.pts li{
+  font-size:20px;line-height:1.55;color:var(--ink-2);
+  padding-left:30px;margin-bottom:20px;position:relative;
+}
+ul.pts li:last-child{margin-bottom:0;}
+ul.pts li::before{content:"";position:absolute;left:2px;top:11px;width:9px;height:9px;background:var(--accent);border-radius:2px;}
+ul.pts li b{color:var(--ink);font-weight:700;}
+
+.callout{
+  flex:0 0 auto; background:var(--accent-soft); border-left:5px solid var(--accent);
+  padding:20px 26px; font-size:18px; line-height:1.6; color:#5E2E1B;
+}
+.callout b{font-weight:700;}
+.callout code{font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:.92em;}
+
+.codewrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.codewrap .cap{flex:0 0 auto;font-size:14px;color:var(--mute);margin-bottom:10px;}
+pre{
+  flex:1 1 auto; min-height:0; background:var(--code-bg); color:#E6E2D6; border-radius:10px;
+  padding:24px 28px; font-size:16.5px; line-height:1.7;
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace; overflow:hidden;
+}
+pre .c{color:#7E7A6B;} pre .k{color:#E08A63;} pre .s{color:#9DBE8A;} pre .p{color:#8A8779;}
+
+.badge{
+  flex:0 0 auto; align-self:center; background:var(--accent); color:#fff;
+  font-size:13px; font-weight:600; padding:6px 13px; border-radius:999px; white-space:nowrap;
+}
+
+table.cmp{border-collapse:collapse;width:100%;font-size:16.5px;}
+table.cmp th,table.cmp td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;}
+table.cmp thead th{font-size:15px;color:var(--mute);font-weight:600;border-bottom:2px solid var(--ink);padding-bottom:11px;}
+table.cmp tbody th{font-weight:600;color:var(--ink);width:205px;}
+table.cmp tbody tr:last-child td,table.cmp tbody tr:last-child th{border-bottom:none;}
+table.cmp td{color:var(--ink-2);}
+table.cmp col.hi{background:var(--accent-soft);}
+table.cmp thead th.hi{color:var(--accent);}
+
+/* ===== 확장 컴포넌트 (절차/분할/스크린샷/흐름/경고/체크리스트) ===== */
+.body code, .callout code, li code, td code, .kv code, .chk code, .flow code{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  background:#ECEAE1; padding:1px 6px; border-radius:4px; font-size:.9em;
+}
+.callout code{background:#EBD9D0;}
+
+/* 절차 목록 */
+ol.steps{list-style:none;counter-reset:s;}
+ol.steps li{
+  counter-increment:s; position:relative; padding-left:38px; margin-bottom:13px;
+  font-size:18px; line-height:1.5; color:var(--ink-2);
+}
+ol.steps li:last-child{margin-bottom:0;}
+ol.steps li::before{
+  content:counter(s); position:absolute; left:0; top:0;
+  width:25px; height:25px; border-radius:50%; background:var(--ink); color:var(--paper);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+ol.steps li b{color:var(--ink);font-weight:700;}
+
+/* 좌우 분할 */
+.split{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+.split.l{grid-template-columns:1.05fr .95fr;}
+.split.r{grid-template-columns:.8fr 1.2fr;}
+.split > div{min-width:0;min-height:0;}
+.col{display:flex;flex-direction:column;gap:16px;min-height:0;}
+
+/* 스크린샷 */
+figure.shot{
+  flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:8px;
+}
+figure.shot img{
+  flex:1 1 auto; min-height:0; max-width:100%;
+  object-fit:contain; border:1px solid var(--line); border-radius:6px; background:#fff;
+}
+figure.shot figcaption{flex:0 0 auto;font-size:13px;color:var(--mute);text-align:center;}
+.shots2{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.shots2.v{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:18px;}
+
+/* 전체 흐름 */
+.flow{display:flex;flex-wrap:wrap;gap:9px;align-items:stretch;}
+.flow .st{
+  border:1px solid var(--line); background:#fff; border-radius:8px;
+  padding:11px 14px; font-size:15px; line-height:1.3; min-width:118px;
+}
+.flow .st b{display:block;font-size:11px;color:var(--mute);letter-spacing:.08em;margin-bottom:4px;font-weight:700;}
+.flow .st.new{border-color:var(--accent);background:var(--accent-soft);}
+.flow .st.new b{color:var(--accent);}
+.flow .arw{display:flex;align-items:center;color:#C6C2B5;font-size:15px;}
+
+/* 환경변수 표 */
+table.kv{width:100%;border-collapse:collapse;font-size:16px;}
+table.kv th,table.kv td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);}
+table.kv thead th{font-size:13px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:9px;letter-spacing:.02em;}
+table.kv td{font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:15px;color:var(--ink);}
+table.kv tbody tr:last-child td{border-bottom:none;}
+
+/* 경고 */
+.warn{
+  flex:0 0 auto; background:#FBF0E0; border-left:5px solid #B8873A;
+  padding:18px 24px; font-size:17.5px; line-height:1.55; color:#5A4118;
+}
+.warn b{font-weight:700;}
+.warn code{background:#EFE0C6;}
+
+/* 체크리스트 */
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:13px 32px;}
+.chk div{font-size:17px;color:var(--ink-2);padding-left:29px;position:relative;line-height:1.45;}
+.chk div::before{
+  content:""; position:absolute; left:0; top:3px; width:16px; height:16px;
+  border:2px solid var(--accent); border-radius:3px;
+}
+
+/* 트러블슈팅 표 */
+table.ts{width:100%;border-collapse:collapse;font-size:15.5px;}
+table.ts th,table.ts td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.42;}
+table.ts thead th{font-size:13.5px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:9px;}
+table.ts tbody th{font-weight:600;color:var(--ink);width:290px;}
+table.ts td{color:var(--ink-2);}
+table.ts tbody tr:last-child td,table.ts tbody tr:last-child th{border-bottom:none;}
+
+
+/* ===== 챕터 6 전용 컴포넌트 ===== */
+.body code, .callout code, li code, td code, .kv code, .chk code, .flow code{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  background:#ECEAE1; padding:1px 6px; border-radius:4px; font-size:.9em;
+}
+.callout code{background:#EBD9D0;}
+.warn code{background:#EFE0C6;}
+
+/* 하위 불릿 */
+ul.pts ul{list-style:none;margin-top:9px;}
+ul.pts ul li{
+  font-size:17.5px; line-height:1.5; color:var(--mute);
+  padding-left:20px; margin-bottom:7px;
+}
+ul.pts ul li::before{
+  content:""; position:absolute; left:2px; top:12px;
+  width:8px; height:2px; background:#C6C2B5; border-radius:0;
+}
+
+/* 절차 목록 */
+ol.steps{list-style:none;counter-reset:s;}
+ol.steps li{
+  counter-increment:s; position:relative; padding-left:38px; margin-bottom:13px;
+  font-size:18px; line-height:1.5; color:var(--ink-2);
+}
+ol.steps li:last-child{margin-bottom:0;}
+ol.steps li::before{
+  content:counter(s); position:absolute; left:0; top:0;
+  width:25px; height:25px; border-radius:50%; background:var(--ink); color:var(--paper);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+ol.steps li b{color:var(--ink);font-weight:700;}
+ol.steps.tight li{margin-bottom:9px;font-size:17px;}
+
+/* 키-값 표 */
+table.kv{width:100%;border-collapse:collapse;font-size:16px;}
+table.kv th,table.kv td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top;}
+table.kv thead th{font-size:13px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:8px;letter-spacing:.02em;}
+table.kv tbody th{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  font-size:14.5px;color:var(--ink);font-weight:600;width:172px;
+}
+table.kv td{color:var(--ink-2);line-height:1.42;}
+table.kv tbody tr:last-child td,table.kv tbody tr:last-child th{border-bottom:none;}
+.kv.wide tbody th{width:252px;}
+/* 주제 열이 한글이라 고정폭 글꼴을 풀고, 마지막 실습 열은 숫자뿐이라 좁힌다 */
+.kv.topic tbody th{font-family:inherit;font-size:16px;}
+.kv.topic th:last-child,.kv.topic td:last-child{width:64px;}
+.col table.kv{font-size:15px;}
+.col table.kv tbody th{width:auto;font-size:13.5px;}
+.col table.kv th,.col table.kv td{padding:7px 9px;}
+
+/* 여러 열에 걸치는 칸은 가운데로 */
+table.cmp td[colspan]{text-align:center;}
+
+/* 한 장에 코드 블록이 둘 이상이면 높이를 다투지 않게 내용만큼만 차지시킨다 */
+.codewrap.fit{flex:0 0 auto;}
+.codewrap.fit pre{flex:0 0 auto;}
+
+/* 문단으로 쓰는 본문 */
+.lead{font-size:20px;line-height:1.75;color:var(--ink-2);}
+.lead b{color:var(--ink);font-weight:700;}
+
+/* 요소가 넷인 장에서 간격만 좁힌다 */
+.body.snug{gap:12px;}
+
+/* 경고 */
+.warn{
+  flex:0 0 auto; background:#FBF0E0; border-left:5px solid #B8873A;
+  padding:18px 24px; font-size:17.5px; line-height:1.55; color:#5A4118;
+}
+.warn b{font-weight:700;}
+
+/* 체크리스트 */
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;}
+.chk div{font-size:16.5px;color:var(--ink-2);padding-left:29px;position:relative;line-height:1.45;}
+.chk div::before{
+  content:""; position:absolute; left:0; top:3px; width:16px; height:16px;
+  border:2px solid var(--accent); border-radius:3px;
+}
+/* ===== 발표 모드 (화면 전용) =====
+   한 장씩 화면을 채우고 방향키로 넘긴다. 클릭·터치로는 넘어가지 않는다.
+   Esc 또는 O 로 전체 스크롤 보기와 전환한다.
+
+   규칙이 전부 @media screen 안에 있어야 한다. 인쇄 경로가 이 코드를 보면
+   PDF 출력이 달라진다. 페이지 번호와 안내도 요소를 만들지 않고 생성 콘텐츠로
+   그린다. 요소를 늘리면 태그드 PDF의 내부 노드 번호가 밀린다. */
+@media screen{
+  body.cs{overflow:hidden;background:#2A2924;}
+  body.cs .deck{padding:0;max-width:none;margin:0;counter-reset:stg;}
+  body.cs .stage{
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(100vw, calc(100vh * 16 / 9));
+    height:min(100vh, calc(100vw * 9 / 16));
+    aspect-ratio:auto; margin:0; box-shadow:none;
+    counter-increment:stg;
+    opacity:0; visibility:hidden; transition:opacity .12s linear;
+  }
+  body.cs .stage.on{opacity:1; visibility:visible;}
+
+  /* 슬라이드 안의 낱개 페이지 번호는 감춘다.
+     화면에서는 아래 "현재 / 전체" 표시 하나만 남긴다. 인쇄에는 그대로 나간다. */
+  body.cs .ft .no{visibility:hidden;}
+
+  /* 슬라이드가 transform 을 갖고 있어 이 고정 위치는 뷰포트가 아니라
+     슬라이드를 기준으로 잡힌다. 원래 페이지 번호가 있던 자리에 그대로 놓인다. */
+  body.cs .stage.on::after{
+    content:counter(stg) " / 29";
+    position:fixed; right:72px; bottom:34px; z-index:20;
+    font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    font-size:14px; font-variant-numeric:tabular-nums; color:#8A8779;
+    pointer-events:none;
+  }
+  body.cs::after{
+    content:"← →  이동   ·   Esc  전체 보기";
+    position:fixed; left:18px; bottom:13px; z-index:20;
+    font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    font-size:12.5px; letter-spacing:.02em; color:#7E7B6E; pointer-events:none;
+  }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- 1 · 챕터 -->
+<div class="stage"><section class="slide section">
+  <div class="row"><div class="num">06</div><div class="time">1시간</div></div>
+  <h2>기업 보안</h2>
+  <div class="items">
+    <span>마스킹 Hook</span><span>접근 범위</span><span>승인 정책</span>
+    <span>조직 설정</span><span>감사 로그</span>
+  </div>
+</section></div>
+
+<!-- 2 · 다루는 이유 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>안내</div></div>
+  <main>
+    <h2 class="head">&lsquo;기업 보안&rsquo; 주제를 다루는 이유</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="lead">
+        Claude Code는 파일을 읽고 셸 명령을 실행합니다. 업무에 도입하면 <b>사내 코드와
+        고객 데이터가 Claude Code를 통과합니다.</b><br><br>
+        보안 검토는 세 가지를 묻습니다.
+      </div>
+      <ul class="pts">
+        <li>사내 데이터가 어디까지 나가는가</li>
+        <li>실행할 수 있는 명령을 무엇으로 제한하는가</li>
+        <li>사고가 났을 때 무엇을 근거로 확인하는가</li>
+      </ul>
+      <div class="lead">
+        챕터 6에서는 데이터 보호와 권한 제어, 감사 로깅을 Claude Code의 설정과 Hook으로 구현합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">2</div></div>
+</section></div>
+
+<!-- 3 · 다루는 내용 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>안내</div></div>
+  <main>
+    <h2 class="head">이 챕터에서 다루는 내용</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv wide topic">
+        <thead><tr><th>주제</th><th>내용</th><th>실습</th></tr></thead>
+        <tbody>
+          <tr><th>유출 지점</th><td>데이터가 유출되는 경로와 설정이 놓이는 층</td><td>1</td></tr>
+          <tr><th>민감정보 마스킹</th><td>도구가 돌려준 결과를 모델이 보기 전에 가리는 Hook</td><td>2</td></tr>
+          <tr><th>외부 전송 차단</th><td>네트워크로 나가는 도구 인자를 실행 전에 검사</td><td>3</td></tr>
+          <tr><th>환경변수 외부화 · 파일 제외</th><td>자격증명을 두는 자리와 저장소에서 빼는 대상</td><td>4</td></tr>
+          <tr><th>접근 범위 제한</th><td>읽기 금지 경로 지정</td><td>4</td></tr>
+          <tr><th>승인 정책 · 화이트리스트</th><td>물어볼 도구와 바로 실행할 명령의 구분</td><td>5</td></tr>
+          <tr><th>감사 로깅</th><td>도구 호출 기록과 Telemetry, SIEM 연동</td><td>6</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>이 챕터에서는 앱 코드를 고치지 않습니다.</b><br>
+        바꾸는 것은 <code>.claude/</code> 의 설정과 Hook뿐입니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">3</div></div>
+</section></div>
+
+<!-- 3 · 유출 경로 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>유출 지점</div></div>
+  <main>
+    <h2 class="head">데이터가 유출되는 네 경로</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv">
+        <thead><tr><th>경로</th><th>지나가는 것</th><th>이 챕터의 장치</th></tr></thead>
+        <tbody>
+          <tr><th>화면</th><td>도구가 돌려준 파일 내용</td><td>마스킹 Hook</td></tr>
+          <tr><th>모델 API</th><td>같은 내용이 요청에 실려 전송</td><td>마스킹 Hook</td></tr>
+          <tr><th>세션 기록 파일</th><td>주고받은 내용 전부가 홈 폴더에 쌓임</td><td>마스킹 Hook</td></tr>
+          <tr><th>MCP 서버</th><td>연결한 서버로 넘어가는 도구 인자</td><td>권한 규칙</td></tr>
+        </tbody>
+      </table>
+      <ul class="pts">
+        <li><b>도구 뒤에서 가리는 세 경로:</b> 화면과 모델 요청, 세션 기록에는 같은 값이 실립니다. 결과가 모델에 전달되기 전에 한 번 가리면 셋이 함께 가려집니다.</li>
+        <li><b>도구 앞에서 막아야 하는 경로:</b> MCP 서버로는 도구 인자가 그대로 나갑니다. 호출된 뒤에는 늦으므로 권한 규칙으로 막습니다.</li>
+      </ul>
+      <div class="callout">
+        <b>한 번 나간 값은 되돌릴 수 없습니다.</b><br>
+        세션 기록은 지울 수 있지만 모델 요청과 MCP 서버로 나간 것은 회수하지 못합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">4</div></div>
+</section></div>
+
+<!-- 4 · 설정의 세 층 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>유출 지점</div></div>
+  <main>
+    <h2 class="head">설정의 적용 계층</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="cmp">
+        <colgroup><col><col><col class="hi"><col><col></colgroup>
+        <thead><tr><th></th><th>개인</th><th class="hi">프로젝트</th><th>프로젝트 로컬</th><th>조직</th></tr></thead>
+        <tbody>
+          <tr><th>우선순위</th><td>4</td><td>3</td><td>2</td><td>1</td></tr>
+          <tr><th>지정하는 곳</th><td><code>~/.claude/</code><br>settings.json</td><td><code>.claude/</code><br>settings.json</td><td><code>.claude/</code><br>settings.local.json</td><td>managed-<br>settings.json</td></tr>
+          <tr><th>적용 대상</th><td>본인의 모든 프로젝트</td><td>저장소 공유자 모두</td><td>이 프로젝트에서 본인만</td><td>설정을 배포한 PC의 모든 작업</td></tr>
+          <tr><th>고치는 사람</th><td>본인</td><td>저장소 공유자</td><td>본인</td><td>시스템 관리자</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>같은 설정이 여러 층에 있으면 조직 층의 값이 적용됩니다.</b><br>
+        우선순위는 조직, 프로젝트 로컬, 프로젝트, 개인 순으로 낮아지고, 높은 층의 값이 낮은 층의 값을 덮어씁니다.
+        다만 권한 규칙은 덮어쓰이지 않고 층마다 합쳐집니다. 예를 들어 프로젝트 로컬에 <code>Bash(rm:*)</code> 를 <code>allow</code> 로 적어도, 우선순위가 낮은 프로젝트 설정의 <code>deny</code> 에 같은 명령이 있으면 <code>rm</code> 은 차단됩니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">5</div></div>
+</section></div>
+
+<!-- 5 · 실습 1 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 1</div></div>
+  <main>
+    <h2 class="head">실습 1 · 유출 지점 확인</h2>
+    <div class="headrule"></div>
+    <div class="body snug">
+      <ol class="steps tight">
+        <li><b>요청:</b> <code>samples/개발2팀.csv</code> 의 첫 두 줄과 <code>EXP-2026-0230</code> 이 있는 줄을 셸 명령으로 보여 줘</li>
+        <li>화면에 카드번호와 계좌번호, 주민등록번호가 그대로 나오는지 확인</li>
+        <li><b>요청:</b> 내 홈 폴더의 <code>.claude/settings.json</code> 을 읽어 줘</li>
+        <li>승인한 뒤 화면에 API 키가 그대로 나오는지 확인</li>
+        <li><b>요청:</b> <code>~/.claude/projects</code> 아래 세션 기록 파일(<code>.jsonl</code>)에서 카드번호와 API 키를 찾아 줘</li>
+      </ol>
+      <div class="codewrap fit">
+        <div class="cap">Claude Code가 찾아낸 값 중 API 키. 4번에서 확인한 값과 동일</div>
+<pre><span class="k">sk-ant-api03-XXXXXXXXXXXX</span></pre>
+      </div>
+      <div class="callout">
+        <b>이미 나간 값은 설정을 바꿔도 지울 수 없습니다.</b><br>
+        승인 한 번으로 API 키가 화면에 표시됐고, 같은 값이 모델 요청과 세션 기록에도 남았습니다.
+      </div>
+      <div class="warn">
+        <b>이 실습의 API 키는 교육용입니다.</b> 세션 기록에 평문으로 남으므로 강의가 끝나면 키를 폐기해 주세요.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">6</div></div>
+</section></div>
+
+<!-- 6 · 가리는 두 자리 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>데이터 보호</div></div>
+  <main>
+    <h2 class="head">Hook이 개입하는 두 시점</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="cmp">
+        <colgroup><col><col><col class="hi"></colgroup>
+        <thead><tr><th></th><th>PreToolUse</th><th class="hi">PostToolUse</th></tr></thead>
+        <tbody>
+          <tr><th>시점</th><td>도구가 실행되기 전</td><td>도구가 실행된 뒤,<br>모델이 보기 전</td></tr>
+          <tr><th>다루는 것</th><td>도구에 넘기는 인자</td><td>도구가 돌려준 결과</td></tr>
+          <tr><th>돌려주는 값</th><td><code>updatedInput</code><br><code>permissionDecision</code></td><td><code>updatedToolOutput</code></td></tr>
+          <tr><th>막는 것</th><td>네트워크 외부로<br>전송되는 데이터</td><td>모델과 세션 기록에<br>남는 결과</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>데이터가 네트워크 외부로 전송되는 도구는 <code>PreToolUse</code> 에서만 막을 수 있습니다.</b><br>
+        MCP 서버 호출이나 웹 요청은 도구가 실행되는 순간 이미 전송됩니다.
+        <code>PostToolUse</code> 는 그 뒤에 모델이 보는 것만 바꿉니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">7</div></div>
+</section></div>
+
+<!-- 7 · Hook 입출력 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>데이터 보호</div></div>
+  <main>
+    <h2 class="head">Hook이 주고받는 값</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <div class="codewrap">
+            <div class="cap">실제로 오간 값</div>
+<pre style="font-size:12px;padding:14px 16px;"><span class="c"># PreToolUse · 들어오는 것</span>
+<span class="p">{</span> <span class="k">"tool_name"</span><span class="p">:</span> <span class="s">"WebFetch"</span><span class="p">,</span>
+  <span class="k">"tool_input"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"url"</span><span class="p">:</span> <span class="s">"...?id=4667-2280-5514-9073"</span> <span class="p">}}</span>
+
+<span class="c"># PreToolUse · 돌려주는 것</span>
+<span class="p">{</span> <span class="k">"hookSpecificOutput"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"hookEventName"</span><span class="p">:</span> <span class="s">"PreToolUse"</span><span class="p">,</span>
+    <span class="k">"permissionDecision"</span><span class="p">:</span> <span class="s">"deny"</span><span class="p">,</span>
+    <span class="k">"permissionDecisionReason"</span><span class="p">:</span> <span class="s">"..."</span> <span class="p">}}</span>
+
+<span class="c"># PostToolUse · 들어오는 것</span>
+<span class="p">{</span> <span class="k">"tool_name"</span><span class="p">:</span> <span class="s">"Read"</span><span class="p">,</span> <span class="k">"tool_response"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"type"</span><span class="p">:</span> <span class="s">"text"</span><span class="p">,</span>
+    <span class="k">"file"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"filePath"</span><span class="p">,</span> <span class="k">"content"</span><span class="p">,</span> <span class="k">"numLines"</span><span class="p">,</span>
+             <span class="k">"startLine"</span><span class="p">,</span> <span class="k">"totalLines"</span> <span class="p">}}}</span>
+
+<span class="c"># PostToolUse · 돌려주는 것</span>
+<span class="p">{</span> <span class="k">"hookSpecificOutput"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"hookEventName"</span><span class="p">:</span> <span class="s">"PostToolUse"</span><span class="p">,</span>
+    <span class="k">"updatedToolOutput"</span><span class="p">:</span> <span class="p">{</span> <span class="c">content 만 고쳐 그대로</span> <span class="p">}}}</span></pre>
+          </div>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b><code>PreToolUse</code> 가 받는 것:</b> <code>tool_input</code> 입니다. 이 값을 바꾸거나(<code>updatedInput</code>) 호출을 거부합니다(<code>permissionDecision</code>).</li>
+            <li><b><code>PostToolUse</code> 가 받는 것:</b> <code>tool_response</code> 입니다. 고쳐서 <code>updatedToolOutput</code> 으로 돌려줍니다. <b>받은 모양을 그대로 지켜야 합니다.</b> 어긋나면 오류가 기록되고 원본이 가려지지 않은 채 전달됩니다.</li>
+            <li><b>한 matcher에 하나만:</b> 출력을 다시 쓰는 Hook을 여럿 걸면 병렬로 실행되어 어느 것이 적용될지 정해지지 않습니다.</li>
+            <li><b>가려지지 않는 것:</b> 결과는 가려도 <code>tool_input</code> 은 세션 기록에 남습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">8</div></div>
+</section></div>
+
+<!-- 8 · 실습 2 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 2</div></div>
+  <main>
+    <h2 class="head">실습 2 · 결과 마스킹</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <div class="codewrap">
+            <div class="cap">요청 &nbsp;·&nbsp; 한 번에 전달</div>
+<pre style="font-size:12.5px;padding:12px 16px;">카드번호와 계좌번호, 주민등록번호가
+모델에 전달되지 않게 하는 Hook을 만들어 줘.
+1. 스크립트 파일 경로 및 이름은
+   ${CLAUDE_PROJECT_DIR}/.claude/hooks/mask.py
+2. PostToolUse 로 걸고 대상은 Bash 와 Read
+3. 도구가 돌려준 결과에서 세 패턴을 가려
+   updatedToolOutput 으로 돌려줌
+4. 받은 응답의 모양을 그대로 지키고 값만 고침
+5. .claude/settings.json 에 등록</pre>
+          </div>
+        </div>
+        <div class="col">
+          <ol class="steps tight">
+            <li><code>.claude/</code> 아래에 파일을 쓰겠다는 승인 프롬프트가 나타나면 허용</li>
+            <li><code>/hooks</code> 로 <code>PostToolUse</code> 에 <code>mask.py</code> 가 등록됐는지 확인</li>
+            <li>실습 1의 첫 요청을 다시 전송해 세 가지 값이 모두 가려졌는지 확인</li>
+            <li><b>요청:</b> <code>셸 명령을 쓰지 말고 Read 도구로 samples/개발2팀.csv 를 읽어 줘</code></li>
+            <li>같은 값이 가려졌는지 확인</li>
+          </ol>
+        </div>
+      </div>
+      <div class="warn">
+        <b><code>.claude/</code> 는 보호 경로입니다.</b><br>편집을 자동 수락하는 모드에서도 승인을 묻습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">9</div></div>
+</section></div>
+
+<!-- 9 · 실습 2 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 2</div></div>
+  <main>
+    <h2 class="head">실습 2 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">Hook을 등록하기 전</div>
+<pre>EXP-2026-0225,E21349,오세훈,...,<span class="k">4667-2280-5514-9073</span>,<span class="k">하나 311-890337-20108</span>,<span class="k">950127-2661043</span></pre>
+      </div>
+      <div class="codewrap fit">
+        <div class="cap">Hook을 등록한 뒤 같은 요청</div>
+<pre>EXP-2026-0225,E21349,오세훈,...,<span class="s">****-****-****-9073</span>,<span class="s">하나 ***-******-**108</span>,<span class="s">950127-*******</span></pre>
+      </div>
+      <ul class="pts">
+        <li><b>한 Hook을 두 도구에 함께 거는 이유:</b> 가리는 대상이 명령이 아니라 결과입니다. <code>Bash</code> 로 열든 <code>Read</code> 로 열든 돌아오는 값의 자리는 같습니다.</li>
+      </ul>
+      <div class="callout">
+        <b>명령을 바꾸지 않으므로 승인 절차가 그대로입니다.</b><br>
+        여러 명령을 이어 붙여도 합쳐진 출력 전체가 가려집니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">10</div></div>
+</section></div>
+
+<!-- 10 · 외부 전송 도구 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>데이터 보호</div></div>
+  <main>
+    <h2 class="head">네트워크 외부로 전송되는 도구 호출</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="lead" style="font-size:17px;">
+        앞의 Hook은 돌아온 결과를 가립니다. 도구가 값을 네트워크 외부로 전송하면 가리는 시점이 이미 늦습니다.
+      </div>
+      <table class="kv ko wide">
+        <thead><tr><th>도구</th><th>실행되는 순간 일어나는 일</th></tr></thead>
+        <tbody>
+          <tr><th><code>WebFetch</code> · <code>WebSearch</code></th><td>인자가 외부 서비스로 전송</td></tr>
+          <tr><th>MCP 도구</th><td>인자가 연결한 서버로 전송</td></tr>
+          <tr><th><code>Bash</code> 의 <code>curl</code> 류</th><td>셸이 직접 전송</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>이미 전송된 데이터는 회수하지 못합니다.</b><br>
+        <code>PostToolUse</code> 는 모델이 보는 것만 바꿉니다. 앞에서 「도구 앞에서 막아야 하는 경로」라고 한 것이 이 호출들입니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">11</div></div>
+</section></div>
+
+<!-- 11 · 실습 3 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 3</div></div>
+  <main>
+    <h2 class="head">실습 3 · 네트워크 외부 전송 차단</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <div class="codewrap">
+            <div class="cap">요청 &nbsp;·&nbsp; 한 번에 전달</div>
+<pre style="font-size:12.5px;padding:12px 16px;">데이터가 네트워크 외부로 전송되는
+도구 호출을 검사하는 Hook을 만들어 줘.
+1. 스크립트 파일 경로 및 이름은
+   ${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py
+2. PreToolUse 로 걸고 대상은
+   WebFetch, WebSearch, MCP 도구
+3. 도구 인자에 카드번호나 계좌번호,
+   주민등록번호가 있으면 permissionDecision 을
+   deny 로 돌려주고 이유를 적음
+4. MCP 는 mcp__서버명__.* 형태로 적어야 걸림
+5. .claude/settings.json 에 등록</pre>
+          </div>
+        </div>
+        <div class="col">
+          <ol class="steps tight">
+            <li><code>/hooks</code> 로 <code>PreToolUse</code> 에 <code>guard.py</code> 가 등록됐는지 확인</li>
+            <li><b>요청:</b> <code>다음 URL을 WebFetch로 가져와 줘: https://example.com/lookup?id=4667-2280-5514-9073</code></li>
+            <li>거부 사유가 표시되는지 확인</li>
+            <li><b>요청:</b> <code>FastAPI 의 BackgroundTasks 사용법을 웹에서 찾아 줘</code></li>
+            <li>그대로 진행되는지 확인</li>
+          </ol>
+        </div>
+      </div>
+      <div class="callout">
+        <b>네트워크가 막혀 있어도 이 실습은 진행됩니다.</b><br>
+        거부는 도구가 실행되기 전에 일어나므로 외부 접속이 필요 없습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">12</div></div>
+</section></div>
+
+<!-- 12 · 실습 3 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 3</div></div>
+  <main>
+    <h2 class="head">실습 3 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">인자에 카드번호가 실린 호출</div>
+<pre>&gt; 다음 URL을 WebFetch로 가져와 줘: https://example.com/lookup?id=<span class="k">4667-2280-5514-9073</span>
+
+  WebFetch 차단됨
+  <span class="s">외부 요청 인자에 카드번호로 보이는 문자열이 있어 차단했습니다</span></pre>
+      </div>
+      <div class="codewrap fit">
+        <div class="cap">민감정보가 없는 호출</div>
+<pre>&gt; FastAPI 의 BackgroundTasks 사용법을 웹에서 찾아 줘
+  WebSearch 진행</pre>
+      </div>
+      <div class="callout">
+        <b>모델의 판단에 기대지 않습니다.</b><br>
+        모델이 값을 빼고 검색어를 만들기도 하지만 매번 그렇다는 보장이 없습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">13</div></div>
+</section></div>
+
+<!-- 13 · 저장소에 남기지 않는 것 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>데이터 보호</div></div>
+  <main>
+    <h2 class="head">자격증명을 두는 자리</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv wide">
+        <thead><tr><th>대상</th><th>두는 자리</th></tr></thead>
+        <tbody>
+          <tr><th>API 키</th><td>운영체제 환경변수. 이 과정에서는 <code>~/.claude/settings.json</code> 의 <code>env</code> 에 두므로 그 파일을 <code>deny</code> 로 차단</td></tr>
+          <tr><th>공용 환경변수</th><td><code>.claude/settings.json</code> 의 <code>env</code>. 자격증명이 아닌 값만</td></tr>
+          <tr><th>앱이 읽는 비밀값</th><td><code>.env</code> 파일. <code>.gitignore</code> 와 <code>permissions.deny</code> 에 함께 등록</td></tr>
+          <tr><th>발급받아 쓰는 키</th><td><code>apiKeyHelper</code>. 키를 적어 두지 않고 명령을 실행해 그때그때 발급</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>자격증명을 프로젝트 설정에 두지 않습니다.</b><br>
+        <code>.claude/settings.json</code> 은 저장소에 올라가 공유자 모두에게 전달됩니다. 개인 키는 사용자 설정에 두고,
+        앱이 읽는 값은 <code>.env</code> 로 분리합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">14</div></div>
+</section></div>
+
+<!-- 14 · permissions -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>권한 제어</div></div>
+  <main>
+    <h2 class="head">권한 설정의 구성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv wide">
+        <thead><tr><th>항목</th><th>정하는 것</th></tr></thead>
+        <tbody>
+          <tr><th>deny</th><td>거부할 대상. 승인으로 넘길 수 없음</td></tr>
+          <tr><th>ask</th><td>기본이 허용이어도 물어볼 대상</td></tr>
+          <tr><th>allow</th><td>묻지 않고 실행할 대상</td></tr>
+          <tr><th>defaultMode</th><td>어느 규칙에도 걸리지 않았을 때의 기본 동작</td></tr>
+          <tr><th>additionalDirectories</th><td>작업 디렉터리 밖에서 추가로 허용할 경로</td></tr>
+          <tr><th>enabledMcpjsonServers</th><td><code>.mcp.json</code> 의 서버 중 연결할 서버만 지정</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b><code>deny</code> · <code>ask</code> · <code>allow</code> 는 적힌 차례대로 평가됩니다.</b><br>
+        <code>deny</code> 에 먼저 걸리면 <code>allow</code> 에 더 구체적으로 적혀 있어도 거부됩니다. 표기는
+        <code>Bash(uv run pytest:*)</code> 처럼 <code>도구(대상)</code> 형태로 쓰고, MCP 도구는 <code>mcp__서버명__도구명</code> 으로 적습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">15</div></div>
+</section></div>
+
+<!-- 15 · 실습 4 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 4</div></div>
+  <main>
+    <h2 class="head">실습 4 · 접근 범위 제한</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps tight">
+        <li><b>차단 요청:</b> <code>permissions.deny 에 Read(~/.ssh/**), Read(~/.aws/**), Read(**/.env*), Read(**/secrets/**), Read(**/credentials/**) 를 넣어 줘</code></li>
+        <li><b>보존 기간 요청:</b> <code>세션 기록이 오래 남지 않게 cleanupPeriodDays 를 14 로 넣어 줘</code></li>
+        <li><b>요청:</b> <code>.claude/settings.json</code> 의 <code>env</code> 블록에 자격증명이 들어 있지 않은지 확인해 줘</li>
+        <li><b>추가 차단 요청:</b> <code>이 과정에서는 API 키를 ~/.claude/settings.json 에 둬. Read(~/.claude/settings.json) 도 deny 에 넣어 줘</code></li>
+        <li><b>요청:</b> 내 홈 폴더의 <code>.claude/settings.json</code> 을 읽어 줘</li>
+        <li>권한 규칙이 돌려주는 문구를 확인</li>
+      </ol>
+      <div class="callout">
+        <b>규칙이 막는 것은 Agent의 도구 호출뿐입니다.</b><br>
+        <code>uv run settle</code> 은 앱이 파일을 직접 읽으므로 걸리지 않고, <code>/rewind</code> 나 세션 이어가기도
+        Claude Code의 내부 동작이라 영향이 없습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">16</div></div>
+</section></div>
+
+<!-- 16 · 실습 4 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 4</div></div>
+  <main>
+    <h2 class="head">실습 4 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">.claude/settings.json &nbsp;·&nbsp; 실습 4를 마친 뒤</div>
+<pre style="font-size:13.5px;"><span class="p">{</span> <span class="k">"permissions"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"deny"</span><span class="p">:</span> <span class="p">[</span> <span class="s">"Read(~/.ssh/**)"</span><span class="p">,</span> <span class="s">"Read(~/.aws/**)"</span><span class="p">,</span> <span class="s">"Read(**/.env*)"</span><span class="p">,</span>
+              <span class="s">"Read(**/secrets/**)"</span><span class="p">,</span> <span class="s">"Read(**/credentials/**)"</span><span class="p">,</span>
+              <span class="s">"Read(~/.claude/settings.json)"</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="k">"cleanupPeriodDays"</span><span class="p">:</span> <span class="s">14</span> <span class="p">}</span></pre>
+      </div>
+      <div class="codewrap fit">
+        <div class="cap">권한 규칙이 홈 폴더 <code>.claude</code> 읽기를 막았을 때 나오는 문구</div>
+<pre>File is in a directory that is denied by your permission settings.</pre>
+      </div>
+      <div class="callout">
+        <b>Hook은 값을 가리고, 권한 규칙은 접근 자체를 막습니다.</b><br>
+        업무에 필요한 파일은 가린 채로 계속 다룰 수 있어야 하므로 Hook으로 처리하고,
+        볼 이유가 없는 대상은 <code>permissions.deny</code> 에 적습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">17</div></div>
+</section></div>
+
+<!-- 17 · 시작 모드 고정 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>권한 제어</div></div>
+  <main>
+    <h2 class="head">새 세션의 기본 모드 고정</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap">
+        <div class="cap">.claude/settings.json &nbsp;·&nbsp; 모드를 파일로 정하는 두 항목</div>
+<pre style="font-size:13.5px;padding:12px 18px;"><span class="k">"permissions"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"defaultMode"</span><span class="p">:</span> <span class="s">"manual"</span><span class="p">,</span> <span class="k">"disableBypassPermissionsMode"</span><span class="p">:</span> <span class="s">"disable"</span> <span class="p">}</span></pre>
+      </div>
+      <table class="kv ko wide">
+        <thead><tr><th><code>defaultMode</code> 값</th><th>새 세션이 하는 일</th></tr></thead>
+        <tbody>
+          <tr><th>manual</th><td>읽기만 묻지 않고 실행. 나머지는 매번 확인</td></tr>
+          <tr><th>acceptEdits</th><td>파일 편집과 <code>mkdir</code> · <code>mv</code> 같은 명령까지 묻지 않음</td></tr>
+          <tr><th>plan</th><td>읽고 계획만 세움. 승인 전에는 편집하지 않음</td></tr>
+          <tr><th>auto</th><td>전부 실행한 뒤 안전성 검사. 개인 설정에만 적용됨</td></tr>
+          <tr><th>bypassPermissions</th><td>전부 묻지 않고 실행. <code>disableBypassPermissionsMode</code> 로 진입을 막음</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>챕터 3의 <code>Shift+Tab</code> 은 그 세션에만, <code>defaultMode</code> 는 새 세션마다 적용됩니다.</b><br>
+        모드는 묻는 범위를 정할 뿐이고, <code>deny</code> 규칙은 <code>bypassPermissions</code> 를 포함한 모든 모드에서 그대로 평가됩니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">18</div></div>
+</section></div>
+
+<!-- 18 · 실습 5 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 5</div></div>
+  <main>
+    <h2 class="head">실습 5 · 승인 정책</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps">
+        <li><b>허용 요청:</b> <code>승인 정책을 정리해 줘. defaultMode 를 manual 로 두고, 되풀이하는 git status 와 git diff, git log 는 allow 에 넣어 줘. 규칙은 Bash(git status:*) 처럼 콜론과 별표를 붙인 형태로 써 줘</code></li>
+        <li><b>제한 요청:</b> <code>git commit 은 매번 묻도록 ask 에 넣고, 되돌릴 수 없는 rm 과 git push 는 deny 에 넣어 줘. 규칙은 앞과 같이 콜론과 별표를 붙인 형태로 써 줘</code></li>
+        <li>신뢰 대화가 나타나면 목록을 읽고 수락. 나타나지 않으면 Claude Code를 종료하고 다시 실행</li>
+        <li><b>허용 확인 요청:</b> <code>git status 로 지금 변경 상태를 보여 줘</code></li>
+        <li>승인을 묻지 않고 바로 실행되는지 확인</li>
+        <li><b>차단 확인 요청:</b> <code>git push 로 원격에 올려 줘</code></li>
+        <li>거부되는지 확인</li>
+      </ol>
+      <div class="warn">
+        <b>프로젝트 설정의 <code>allow</code> 는 신뢰 대화를 수락해야 적용됩니다.</b><br>
+        규칙을 추가하면 대화가 다시 나타나며 새로 넣은 항목을 보여 줍니다. 수락하지 않으면 그 규칙만 무시되고
+        나머지 설정은 그대로 동작합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">19</div></div>
+</section></div>
+
+<!-- 19 · 실습 5 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 5</div></div>
+  <main>
+    <h2 class="head">실습 5 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">신뢰 대화를 수락하기 전에 나오는 알림</div>
+<pre>Ignoring 3 permissions.allow entries from .claude/settings.json:
+this workspace has not been trusted.</pre>
+      </div>
+      <div class="codewrap fit">
+        <div class="cap">신뢰 대화를 수락한 뒤</div>
+<pre><span class="c"># git status  →  승인 프롬프트 없이 실행</span>
+On branch main / Untracked files: a.txt
+<span class="c"># git push origin main  →  거부</span>
+Permission to use Bash with command git push origin main has been denied.</pre>
+      </div>
+      <div class="callout">
+        <b><code>allow</code> 는 신뢰를 수락해야, <code>deny</code> 는 곧바로 적용됩니다.</b><br>
+        수락 전에는 <code>allow</code> 만 무시되고 <code>deny</code> 와 <code>ask</code> 는 그대로 동작합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">20</div></div>
+</section></div>
+
+<!-- 20 · 조직 설정 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>조직 설정</div></div>
+  <main>
+    <h2 class="head">조직이 강제하는 설정</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">MDM이나 그룹 정책으로 배포 &nbsp;·&nbsp; C:\Program Files\ClaudeCode\managed-settings.json</div>
+<pre><span class="p">{</span>
+  <span class="k">"permissions"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"defaultMode"</span><span class="p">:</span> <span class="s">"manual"</span><span class="p">,</span> <span class="k">"deny"</span><span class="p">:</span> <span class="p">[</span><span class="s">"Read(.env)"</span><span class="p">,</span> <span class="s">"Read(~/.ssh/**)"</span><span class="p">],</span>
+    <span class="k">"allowManagedPermissionRulesOnly"</span><span class="p">:</span> <span class="s">true</span>
+  <span class="p">},</span>
+  <span class="k">"enabledMcpjsonServers"</span><span class="p">:</span> <span class="p">[</span><span class="s">"context7"</span><span class="p">],</span>
+  <span class="k">"forceLoginOrgUUID"</span><span class="p">:</span> <span class="s">"조직 UUID"</span>
+<span class="p">}</span></pre>
+      </div>
+      <ul class="pts">
+        <li><b>규칙 병합 차단:</b> <code>allowManagedPermissionRulesOnly</code> 를 켜면 조직이 적은 규칙만 남고 아래 층의 규칙은 합쳐지지 않습니다.</li>
+        <li><b>연결 제한:</b> 목록에 적은 MCP 서버만 연결됩니다. 목록 밖 서버는 <code>.mcp.json</code> 에 있어도 시작되지 않습니다.</li>
+        <li><b>로그인 제한:</b> <code>forceLoginOrgUUID</code> 를 지정하면 다른 조직 계정으로 로그인하거나 환경변수에 넣은 API 키로 접속하는 경로가 차단됩니다.</li>
+      </ul>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">21</div></div>
+</section></div>
+
+<!-- 21 · 남는 기록 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>감사 로깅</div></div>
+  <main>
+    <h2 class="head">사용 기록과 수집</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="cmp">
+        <colgroup><col><col><col class="hi"><col class="hi"></colgroup>
+        <thead><tr><th></th><th>세션 기록 파일</th><th class="hi">Hook 감사 로그</th><th class="hi">OpenTelemetry</th></tr></thead>
+        <tbody>
+          <tr><th>남기는 주체</th><td>Claude Code 기본</td><td>직접 만든 Hook</td><td>Claude Code 기본</td></tr>
+          <tr><th>담기는 것</th><td>주고받은 내용 전부</td><td>정한 항목만</td><td>이벤트와 속성</td></tr>
+          <tr><th>남는 자리</th><td>홈 폴더</td><td>정하는 대로</td><td>수집 서버</td></tr>
+          <tr><th>켜는 방법</th><td>항상 켜져 있음</td><td>Hook 등록</td><td>환경변수</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>조직이 모아 보려면 Hook이나 Telemetry로 내보내야 합니다.</b><br>
+        세션 기록은 개인 PC의 홈 폴더에만 쌓이고, 실습 4에서 정한 보존 기간이 지나면 지워집니다.
+        실습 6에서 두 방법을 모두 확인합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">22</div></div>
+</section></div>
+
+<!-- 22 · 실습 6-1 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 6-1</div></div>
+  <main>
+    <h2 class="head">실습 6-1 · Hook 감사 로그</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps tight">
+        <li><b>요청:</b> 모든 도구 호출을 <code>.claude/audit.jsonl</code> 에 남기는 <code>PostToolUse</code> Hook을 <code>${CLAUDE_PROJECT_DIR}/.claude/hooks/audit.py</code> 로 만들어 줘. 시각과 도구 이름, 인자 요약을 한 줄씩 적고, 민감정보는 남기지 마. <code>.claude/settings.json</code> 에 등록하고 <code>.claude/audit.jsonl</code> 은 <code>.gitignore</code> 에 넣어 줘</li>
+        <li><code>/hooks</code> 로 <code>PostToolUse</code> 에 <code>audit.py</code> 가 등록됐는지 확인. 보이지 않으면 Claude Code를 종료하고 다시 실행</li>
+        <li><b>요청:</b> <code>uv run pytest 를 실행해 줘</code></li>
+        <li><b>요청:</b> <code>samples 폴더에서 교육훈련비가 있는 줄을 셸 명령으로 찾아 줘</code></li>
+        <li><b>요청:</b> <code>docs/경비규정.md 를 Read 도구로 읽어 줘</code></li>
+        <li><code>.claude/audit.jsonl</code> 을 열어 세 호출이 한 줄씩 남았는지 확인</li>
+      </ol>
+      <div class="callout">
+        <b>남길 항목을 직접 고를 수 있는 것이 Hook 감사 로그의 장점입니다.</b><br>
+        세션 기록은 주고받은 내용 전부가 그대로 쌓이지만, 여기서는 시각과 도구 이름, 인자 요약만 적습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">23</div></div>
+</section></div>
+
+<!-- 23 · 실습 6-1 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 6-1</div></div>
+  <main>
+    <h2 class="head">실습 6-1 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">.claude/audit.jsonl &nbsp;·&nbsp; Hook이 남긴 기록</div>
+<pre>{"time": "2026-08-18T23:38:40+09:00", "tool": "Bash", "args": "uv run pytest -q"}
+{"time": "2026-08-18T23:38:44+09:00", "tool": "Bash", "args": "grep 교육훈련비 samples/*.csv"}
+{"time": "2026-08-18T23:38:51+09:00", "tool": "Read", "args": "docs/경비규정.md"}</pre>
+      </div>
+      <ul class="pts">
+        <li><b>인자 요약만 남는 이유:</b> 도구가 돌려준 내용은 적지 않습니다. 감사에 필요한 것은 무엇을 언제 호출했는가이고, 내용까지 남기면 이 파일이 새로운 유출 지점이 됩니다.</li>
+        <li><b>저장소에 올리지 않는 이유:</b> 개인의 작업 이력이므로 <code>.gitignore</code> 에 넣습니다. 조직이 모아 보는 것은 다음 실습의 Telemetry로 합니다.</li>
+      </ul>
+      <div class="callout">
+        <b>Hook이 실패해도 도구 실행은 막지 않습니다.</b><br>
+        감사 기록이 목적이므로 <code>audit.py</code> 는 종료 코드로 차단하지 않습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">24</div></div>
+</section></div>
+
+<!-- 24 · 실습 6-2 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 6-2</div></div>
+  <main>
+    <h2 class="head">실습 6-2 · Telemetry</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps tight">
+        <li>새 PowerShell 창에서 아래 두 줄을 입력 (macOS와 Linux는 <code>export 이름=값</code> 으로 설정)</li>
+      </ol>
+      <div class="codewrap fit">
+<pre><span class="k">$env:CLAUDE_CODE_ENABLE_TELEMETRY</span> = <span class="s">"1"</span>
+<span class="k">$env:OTEL_LOGS_EXPORTER</span> = <span class="s">"console"</span></pre>
+      </div>
+      <ol class="steps tight" style="counter-reset:s 1;">
+        <li>같은 창에서 <code>claude -p "telemetry.txt 를 .gitignore 에 넣어 줘" --permission-mode acceptEdits &gt; telemetry.txt</code> 실행</li>
+        <li><code>telemetry.txt</code> 를 열어 <code>claude_code.tool_decision</code> 이벤트 확인</li>
+        <li>같은 파일에서 <code>user_prompt</code> 와 <code>tool_result</code>, <code>api_request</code> 도 찾아보기</li>
+        <li><code>.gitignore</code> 에 <code>telemetry.txt</code> 가 들어갔는지 확인</li>
+      </ol>
+      <div class="warn">
+        <b>대화형 화면에서는 이벤트가 보이지 않습니다.</b><br>
+        <code>console</code> exporter는 표준 출력에 쓰지만 대화형 Claude Code가 화면을 다시 그리면서 덮어쓰기 때문입니다.
+        파일로 받아 열어야 확인할 수 있습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">25</div></div>
+</section></div>
+
+<!-- 25 · 실습 6-2 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>실습 6-2</div></div>
+  <main>
+    <h2 class="head">실습 6-2 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap fit">
+        <div class="cap">telemetry.txt &nbsp;·&nbsp; <code>tool_decision</code> 이벤트. 개인 식별자는 가려서 표기</div>
+<pre>body: <span class="s">"claude_code.tool_decision"</span>
+attributes: <span class="p">{</span>
+  <span class="k">"session.id"</span>: <span class="s">"43f11918-..."</span>, <span class="k">"organization.id"</span>: <span class="s">"f71e38d0-..."</span>,
+  <span class="k">"user.email"</span>: <span class="s">"..."</span>, decision: <span class="s">"accept"</span>, source: <span class="s">"config"</span>, tool_name: <span class="s">"Edit"</span> <span class="p">}</span></pre>
+      </div>
+      <div class="codewrap fit">
+        <div class="cap">한 번의 요청에서 나온 이벤트</div>
+<pre>user_prompt 1 · tool_decision 2 · tool_result 2
+api_request 4 · assistant_response 2 · mcp_server_connection 8</pre>
+      </div>
+      <div class="callout">
+        <b>모든 이벤트에 계정과 조직 식별자가 함께 담겨 전송됩니다.</b><br>
+        요청 한 번에 이벤트가 열 건 넘게 나가므로 무엇을 내보낼지 먼저 정합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">26</div></div>
+</section></div>
+
+<!-- 26 · SIEM -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>감사 로깅</div></div>
+  <main>
+    <h2 class="head">SIEM 연동</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <div class="codewrap">
+            <div class="cap">PowerShell &nbsp;·&nbsp; 중앙 수집기로 내보내는 환경변수</div>
+<pre style="font-size:12.5px;padding:12px 16px;"><span class="c"># 1. Telemetry 활성화</span>
+<span class="k">$env:CLAUDE_CODE_ENABLE_TELEMETRY</span> = <span class="s">"1"</span>
+
+<span class="c"># 2. 내보내기 선택 (필요한 것만)</span>
+<span class="k">$env:OTEL_METRICS_EXPORTER</span> = <span class="s">"otlp"</span>   <span class="c"># otlp, prometheus, console, none</span>
+<span class="k">$env:OTEL_LOGS_EXPORTER</span> = <span class="s">"otlp"</span>      <span class="c"># otlp, console, none</span>
+
+<span class="c"># 3. OTLP 엔드포인트</span>
+<span class="k">$env:OTEL_EXPORTER_OTLP_PROTOCOL</span> = <span class="s">"grpc"</span>
+<span class="k">$env:OTEL_EXPORTER_OTLP_ENDPOINT</span> = <span class="s">"http://localhost:4317"</span>
+
+<span class="c"># 4. 인증 (필요한 경우)</span>
+<span class="k">$env:OTEL_EXPORTER_OTLP_HEADERS</span> = <span class="s">"Authorization=Bearer your-token"</span>
+
+<span class="c"># 5. 내보내기 간격 (기본 60000 · 5000)</span>
+<span class="k">$env:OTEL_METRIC_EXPORT_INTERVAL</span> = <span class="s">"10000"</span>
+<span class="k">$env:OTEL_LOGS_EXPORT_INTERVAL</span> = <span class="s">"5000"</span></pre>
+          </div>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b>SIEM(Security Information and Event Management):</b> 여러 시스템의 로그를 한곳에 모아 이상 징후를 찾는 보안 관제 도구입니다. Splunk와 Elastic, Sentinel 같은 제품이 있습니다.</li>
+            <li><b>지표와 이벤트의 분리:</b> 내보낼 신호를 각각 정합니다. 필요한 쪽만 구성하면 됩니다.</li>
+            <li><b>본문 처리:</b> 프롬프트와 도구 인자의 본문은 기본으로 <code>&lt;REDACTED&gt;</code> 로 가려지고 글자 수만 남습니다.</li>
+          </ul>
+          <div class="callout">
+            <b>실습 6-2에서 <code>console</code> 로 본 이벤트가 그대로 수집기로 전송됩니다.</b><br>
+            항목별 설정과 이벤트 목록은 <a class="ext" href="https://code.claude.com/docs/ko/monitoring-usage" target="_blank" rel="noopener">공식 문서</a>에 있습니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">27</div></div>
+</section></div>
+
+<!-- 27 · 수집한 기록의 활용 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>감사 로깅</div></div>
+  <main>
+    <h2 class="head">수집한 기록의 활용</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv wide">
+        <thead><tr><th>하는 일</th><th>쓰는 이벤트와 지표</th></tr></thead>
+        <tbody>
+          <tr><th>부서별 비용 집계</th><td><code>cost.usage</code> · <code>token.usage</code> 를 <code>OTEL_RESOURCE_ATTRIBUTES</code> 의 부서 속성으로 분리</td></tr>
+          <tr><th>승인 정책 점검</th><td><code>tool_decision</code> 의 <code>decision</code> 과 <code>source</code> 로 거부된 호출과 차단 주체 확인</td></tr>
+          <tr><th>도구 실패 추적</th><td><code>tool_result</code> 의 <code>success</code> 와 <code>error_type</code>, <code>duration_ms</code> 집계</td></tr>
+          <tr><th>연결 서버 감사</th><td><code>mcp_server_connection</code> 의 <code>server_scope</code> 와 <code>status</code> 확인</td></tr>
+          <tr><th>요청 단위 흐름 재구성</th><td><code>prompt.id</code> 로 한 요청에서 나온 이벤트를 하나로 결합</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>흩어진 이벤트를 <code>prompt.id</code> 로 이어 볼 수 있습니다.</b><br>
+        요청 하나가 이벤트 여러 건으로 나뉘어 전송되지만, 모든 이벤트에 같은 <code>prompt.id</code> 가 별도 설정 없이 붙습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">28</div></div>
+</section></div>
+
+<!-- 28 · 확인 항목 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 6</span> &nbsp;기업 보안</div><div>정리</div></div>
+  <main>
+    <h2 class="head">확인 항목</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="chk">
+        <div>세션 기록에 남은 카드번호와 API 키 확인</div>
+        <div><code>~/.claude/settings.json</code> 읽기 승인 후 API 키 노출 확인</div>
+        <div><code>.claude/hooks/mask.py</code> 생성</div>
+        <div><code>Bash</code> 와 <code>Read</code> 결과에서 세 가지 값 마스킹 확인</div>
+        <div><code>.claude/hooks/guard.py</code> 생성</div>
+        <div>카드번호가 담긴 <code>WebFetch</code> 호출 차단 확인</div>
+        <div>민감정보 없는 웹 요청은 통과 확인</div>
+        <div><code>deny</code> 에 <code>.ssh</code> · <code>.aws</code> · <code>.env</code> · secrets · credentials 추가</div>
+        <div><code>cleanupPeriodDays</code> 로 세션 기록 보존 기간 단축</div>
+        <div><code>env</code> 블록에 자격증명이 없는지 확인</div>
+        <div><code>defaultMode</code> 를 <code>manual</code> 로 변경</div>
+        <div><code>allow</code> 와 <code>ask</code> 에 명령 등록</div>
+        <div>신뢰 대화 수락 후 <code>allow</code> 적용 확인</div>
+        <div><code>rm</code> 차단 확인</div>
+        <div><code>.claude/hooks/audit.py</code> 생성과 <code>.gitignore</code> 추가</div>
+        <div><code>audit.jsonl</code> 에 세 호출이 한 줄씩 남았는지 확인</div>
+        <div><code>telemetry.txt</code> 에서 <code>tool_decision</code> 이벤트 확인</div>
+        <div><code>uv run pytest</code> 에서 <code>19 passed</code> 유지</div>
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">29</div></div>
+</section></div>
+
+</div>
+
+<script>
+/* 창 너비에 맞춰 1280 캔버스를 스케일. ResizeObserver 로 실시간 반응. */
+(function(){
+  var deck=document.querySelector('.deck'), stage=document.querySelector('.stage');
+  function fit(){ if(!stage) return;
+    document.documentElement.style.setProperty('--s', stage.clientWidth/1280); }
+  new ResizeObserver(fit).observe(deck);
+  window.addEventListener('load',fit); fit();
+  window.addEventListener('beforeprint',function(){document.documentElement.style.setProperty('--s',1);});
+  window.addEventListener('afterprint',fit);
+})();
+/* 발표 모드. 화살표 키로만 넘어간다(클릭·터치 전환 없음).
+   Esc 또는 O 로 전체 스크롤 보기와 전환한다.
+   인쇄는 @media print 가 맡으므로 여기서 개입하지 않는다.
+
+   맥 노트북에는 Home/End 키가 없다. Fn+← / Fn+→ 가 같은 이벤트를 보낸다. */
+(function(){
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  if(!stages.length) return;
+  var i=0, on=true;
+
+  function scale(el){
+    if(el && el.clientWidth)
+      document.documentElement.style.setProperty('--s', el.clientWidth/1280);
+  }
+  function render(){
+    for(var n=0;n<stages.length;n++) stages[n].classList.toggle('on', n===i);
+    scale(stages[i]);
+  }
+  function go(d){ var t=i+d; if(t<0||t>=stages.length) return; i=t; render(); }
+  function mode(v){
+    on=v; document.body.classList.toggle('cs', v);
+    if(!v) for(var n=0;n<stages.length;n++) stages[n].classList.remove('on');
+    /* 클래스가 반영된 뒤에 크기를 재야 한다. 바로 재면 이전 레이아웃 값이 나온다. */
+    requestAnimationFrame(function(){
+      if(on){ render(); return; }
+      scale(stages[0]);
+      stages[i].scrollIntoView({block:'start'});
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    /* e.key 는 한글 입력 상태에서 'ㅐ' 로 들어온다. 자판과 무관한 e.code 를 본다. */
+    if(e.code==='KeyO'||e.key==='Escape'){ mode(!on); e.preventDefault(); return; }
+    if(!on) return;
+    var k=e.key;
+    if(k==='ArrowRight'||k==='ArrowDown'||k==='PageDown'||k===' '){ go(1); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp'){ go(-1); e.preventDefault(); }
+    else if(k==='Home'){ i=0; render(); e.preventDefault(); }
+    else if(k==='End'){ i=stages.length-1; render(); e.preventDefault(); }
+  });
+  window.addEventListener('resize', function(){ if(on) render(); });
+  mode(true);
+})();
+</script>
+
+<script>
+/* 챕터 경계에서 앞뒤 파일로 넘어간다. 게시본에만 붙는다. */
+(function(){
+  var PREV="chapter-05.html", NEXT="chapter-07.html";
+  function stages(){ return [].slice.call(document.querySelectorAll('.stage')); }
+  document.addEventListener('keydown', function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    /* 전체 보기 전환은 O 가 맡는다. Esc 는 목차로 나간다. */
+    if(e.key==='Escape'){
+      e.preventDefault(); e.stopPropagation(); location.href='index.html'; return;
+    }
+    if(!document.body.classList.contains('cs')) return;
+    var st=stages(); if(!st.length) return;
+    var k=e.key;
+    var fwd=(k==='ArrowRight'||k==='ArrowDown'||k==='PageDown'||k===' ');
+    var back=(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp');
+    if(fwd && NEXT && st[st.length-1].classList.contains('on')){
+      e.preventDefault(); e.stopPropagation(); location.href=NEXT;
+    } else if(back && PREV && st[0].classList.contains('on')){
+      e.preventDefault(); e.stopPropagation(); location.href=PREV+'#end';
+    }
+  }, true);
+  if(location.hash==='#end'){
+    /* presenter.js 가 End 키를 마지막 슬라이드로 읽는다. */
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        document.dispatchEvent(new KeyboardEvent('keydown', {key:'End'}));
+      }, 0);
+    });
+  }
+})();
+</script>
+</body>
+</html>
+<!-- deck-src 987c9e4d132e0fe0 -->

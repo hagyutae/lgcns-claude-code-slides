@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>챕터 3 · 핵심 기능 탐색 | Claude Code 기반 AI Agent 개발 자동화 실무</title>
+<style>
+/* deck theme: 1280x720 설계 캔버스. SKILL.md 의 '프레임 계약' 참조.
+   납품용 HTML 에는 이 파일 전체를 <style> 로 인라인한다. */
+
+:root{
+  --ink:#16150F; --ink-2:#3A382F; --paper:#FBFAF7;
+  --line:#E2DFD5; --accent:#C9603C; --accent-soft:#F6E9E2;
+  --code-bg:#1C1B16; --mute:#8A8779; --dim:#B9B5A6;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:#4E4C45;}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans CJK KR','Noto Sans KR',system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; font-feature-settings:"tnum";
+}
+
+/* ============ RESPONSIVE SHELL ============
+   설계 캔버스는 1280x720 고정(px 값이 PDF와 1:1로 대응).
+   .stage 가 창 너비를 따라가고, .slide 를 그 비율만큼 scale 한다.
+   인쇄(=PDF) 시에는 scale 을 해제해 원본 1280x720 로 출력. */
+.deck{padding:26px 20px;max-width:1560px;margin:0 auto;}
+.stage{
+  position:relative; width:100%; aspect-ratio:16/9;
+  margin:0 auto 22px; overflow:hidden;
+  box-shadow:0 6px 26px rgba(0,0,0,.28);
+  page-break-after:always; break-after:page;
+}
+.stage:last-child{page-break-after:auto;break-after:auto;margin-bottom:0;}
+.slide{
+  position:absolute; top:0; left:0;
+  width:1280px; height:720px; background:var(--paper); color:var(--ink);
+  overflow:hidden;
+  transform-origin:top left; transform:scale(var(--s,1));
+  display:flex; flex-direction:column;
+  padding:44px 72px 34px;
+}
+
+@page{size:1280px 720px;margin:0;}
+@media print{
+  html,body{background:#fff;}
+  .deck{padding:0;max-width:none;}
+  .stage{width:1280px;height:720px;aspect-ratio:auto;margin:0;box-shadow:none;}
+  .slide{position:relative;transform:none;}
+}
+
+/* header / footer 고정, main 이 남는 높이를 흡수 */
+.hd{
+  flex:0 0 auto; display:flex; justify-content:space-between; align-items:baseline;
+  font-size:14px; letter-spacing:.02em; color:var(--mute);
+}
+.hd .mod{color:var(--accent);font-weight:600;}
+.ft{
+  flex:0 0 auto; display:flex; justify-content:space-between; align-items:flex-end;
+  font-size:13px; color:var(--mute); padding-top:16px;
+}
+.ft .no{font-variant-numeric:tabular-nums;font-size:14px;}
+main{flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
+
+h2.head{
+  flex:0 0 auto; font-size:38px; font-weight:700; letter-spacing:-.015em;
+  line-height:1.3; margin-top:26px;
+  display:flex; align-items:baseline; gap:18px;
+}
+h2.head::after{content:none;}
+.headrule{flex:0 0 auto; width:56px; height:5px; background:var(--accent); margin:18px 0 0;}
+.body{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:26px 0 4px;}
+
+/* ============ TITLE ============ */
+.title-slide{background:var(--ink); color:var(--paper); justify-content:space-between; padding-top:52px;}
+.title-slide::before{content:"";position:absolute;top:0;left:0;width:100%;height:8px;background:var(--accent);}
+.eyebrow{font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+.title-slide h1{font-size:58px;line-height:1.22;font-weight:800;letter-spacing:-.02em;margin-top:24px;}
+.title-slide .sub{margin-top:28px;font-size:20px;color:var(--dim);line-height:1.6;}
+.title-slide .center{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;}
+.title-slide .meta{
+  flex:0 0 auto; display:flex; gap:44px; font-size:15px; color:#8D8A7C;
+  border-top:1px solid #34322A; padding-top:20px;
+}
+.title-slide .meta b{color:var(--paper);font-weight:600;display:block;margin-bottom:5px;font-size:16px;}
+
+/* ============ SECTION DIVIDER ============ */
+.section{background:var(--ink);color:var(--paper);justify-content:center;}
+.section .row{display:flex;justify-content:space-between;align-items:flex-start;}
+.section .num{font-size:140px;font-weight:800;color:var(--accent);line-height:.9;letter-spacing:-.04em;}
+.section .time{font-size:18px;color:#8D8A7C;border:1px solid #45423A;border-radius:6px;padding:9px 18px;}
+.section h2{font-size:48px;font-weight:700;letter-spacing:-.015em;margin-top:42px;}
+.section .items{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px;}
+.section .items span{border:1px solid #45423A;border-radius:999px;padding:9px 20px;font-size:16px;color:#C6C2B3;}
+
+/* ============ CONTENT PARTS ============ */
+ul.pts{list-style:none;}
+ul.pts li{
+  font-size:20px;line-height:1.55;color:var(--ink-2);
+  padding-left:30px;margin-bottom:20px;position:relative;
+}
+ul.pts li:last-child{margin-bottom:0;}
+ul.pts li::before{content:"";position:absolute;left:2px;top:11px;width:9px;height:9px;background:var(--accent);border-radius:2px;}
+ul.pts li b{color:var(--ink);font-weight:700;}
+
+.callout{
+  flex:0 0 auto; background:var(--accent-soft); border-left:5px solid var(--accent);
+  padding:20px 26px; font-size:18px; line-height:1.6; color:#5E2E1B;
+}
+.callout b{font-weight:700;}
+.callout code{font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:.92em;}
+
+.codewrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.codewrap .cap{flex:0 0 auto;font-size:14px;color:var(--mute);margin-bottom:10px;}
+pre{
+  flex:1 1 auto; min-height:0; background:var(--code-bg); color:#E6E2D6; border-radius:10px;
+  padding:24px 28px; font-size:16.5px; line-height:1.7;
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace; overflow:hidden;
+}
+pre .c{color:#7E7A6B;} pre .k{color:#E08A63;} pre .s{color:#9DBE8A;} pre .p{color:#8A8779;}
+
+.badge{
+  flex:0 0 auto; align-self:center; background:var(--accent); color:#fff;
+  font-size:13px; font-weight:600; padding:6px 13px; border-radius:999px; white-space:nowrap;
+}
+
+table.cmp{border-collapse:collapse;width:100%;font-size:16.5px;}
+table.cmp th,table.cmp td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;}
+table.cmp thead th{font-size:15px;color:var(--mute);font-weight:600;border-bottom:2px solid var(--ink);padding-bottom:11px;}
+table.cmp tbody th{font-weight:600;color:var(--ink);width:205px;}
+table.cmp tbody tr:last-child td,table.cmp tbody tr:last-child th{border-bottom:none;}
+table.cmp td{color:var(--ink-2);}
+table.cmp col.hi{background:var(--accent-soft);}
+table.cmp thead th.hi{color:var(--accent);}
+
+/* ===== 확장 컴포넌트 (절차/분할/스크린샷/흐름/경고/체크리스트) ===== */
+.body code, .callout code, li code, td code, .kv code, .chk code, .flow code{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  background:#ECEAE1; padding:1px 6px; border-radius:4px; font-size:.9em;
+}
+.callout code{background:#EBD9D0;}
+
+/* 절차 목록 */
+ol.steps{list-style:none;counter-reset:s;}
+ol.steps li{
+  counter-increment:s; position:relative; padding-left:38px; margin-bottom:13px;
+  font-size:18px; line-height:1.5; color:var(--ink-2);
+}
+ol.steps li:last-child{margin-bottom:0;}
+ol.steps li::before{
+  content:counter(s); position:absolute; left:0; top:0;
+  width:25px; height:25px; border-radius:50%; background:var(--ink); color:var(--paper);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+ol.steps li b{color:var(--ink);font-weight:700;}
+
+/* 좌우 분할 */
+.split{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+.split.l{grid-template-columns:1.05fr .95fr;}
+.split.r{grid-template-columns:.8fr 1.2fr;}
+.split > div{min-width:0;min-height:0;}
+.col{display:flex;flex-direction:column;gap:16px;min-height:0;}
+
+/* 스크린샷 */
+figure.shot{
+  flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:8px;
+}
+figure.shot img{
+  flex:1 1 auto; min-height:0; max-width:100%;
+  object-fit:contain; border:1px solid var(--line); border-radius:6px; background:#fff;
+}
+figure.shot figcaption{flex:0 0 auto;font-size:13px;color:var(--mute);text-align:center;}
+.shots2{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.shots2.v{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:18px;}
+
+/* 전체 흐름 */
+.flow{display:flex;flex-wrap:wrap;gap:9px;align-items:stretch;}
+.flow .st{
+  border:1px solid var(--line); background:#fff; border-radius:8px;
+  padding:11px 14px; font-size:15px; line-height:1.3; min-width:118px;
+}
+.flow .st b{display:block;font-size:11px;color:var(--mute);letter-spacing:.08em;margin-bottom:4px;font-weight:700;}
+.flow .st.new{border-color:var(--accent);background:var(--accent-soft);}
+.flow .st.new b{color:var(--accent);}
+.flow .arw{display:flex;align-items:center;color:#C6C2B5;font-size:15px;}
+
+/* 환경변수 표 */
+table.kv{width:100%;border-collapse:collapse;font-size:16px;}
+table.kv th,table.kv td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);}
+table.kv thead th{font-size:13px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:9px;letter-spacing:.02em;}
+table.kv td{font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:15px;color:var(--ink);}
+table.kv tbody tr:last-child td{border-bottom:none;}
+
+/* 경고 */
+.warn{
+  flex:0 0 auto; background:#FBF0E0; border-left:5px solid #B8873A;
+  padding:18px 24px; font-size:17.5px; line-height:1.55; color:#5A4118;
+}
+.warn b{font-weight:700;}
+.warn code{background:#EFE0C6;}
+
+/* 체크리스트 */
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:13px 32px;}
+.chk div{font-size:17px;color:var(--ink-2);padding-left:29px;position:relative;line-height:1.45;}
+.chk div::before{
+  content:""; position:absolute; left:0; top:3px; width:16px; height:16px;
+  border:2px solid var(--accent); border-radius:3px;
+}
+
+/* 트러블슈팅 표 */
+table.ts{width:100%;border-collapse:collapse;font-size:15.5px;}
+table.ts th,table.ts td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.42;}
+table.ts thead th{font-size:13.5px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:9px;}
+table.ts tbody th{font-weight:600;color:var(--ink);width:290px;}
+table.ts td{color:var(--ink-2);}
+table.ts tbody tr:last-child td,table.ts tbody tr:last-child th{border-bottom:none;}
+
+
+/* ===== 챕터 3 전용 컴포넌트 ===== */
+.body code, .callout code, li code, td code, .kv code, .chk code, .flow code{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  background:#ECEAE1; padding:1px 6px; border-radius:4px; font-size:.9em;
+}
+.callout code{background:#EBD9D0;}
+
+/* 요소가 셋인 장에서 간격만 좁힌다 */
+.body.snug{gap:12px;}
+.warn code{background:#EFE0C6;}
+
+/* 절차 목록 */
+ol.steps{list-style:none;counter-reset:s;}
+ol.steps li{
+  counter-increment:s; position:relative; padding-left:38px; margin-bottom:13px;
+  font-size:18px; line-height:1.5; color:var(--ink-2);
+}
+ol.steps li:last-child{margin-bottom:0;}
+ol.steps li::before{
+  content:counter(s); position:absolute; left:0; top:0;
+  width:25px; height:25px; border-radius:50%; background:var(--ink); color:var(--paper);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+ol.steps li b{color:var(--ink);font-weight:700;}
+
+/* 좌우 분할 */
+.split{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+.split.l{grid-template-columns:1.05fr .95fr;}
+.split.r{grid-template-columns:.8fr 1.2fr;}
+.split > div{min-width:0;min-height:0;}
+.col{display:flex;flex-direction:column;gap:16px;min-height:0;}
+.col h3{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+
+/* 전체 흐름 */
+.flow{display:flex;flex-wrap:wrap;gap:9px;align-items:stretch;}
+.flow .st{
+  border:1px solid var(--line); background:#fff; border-radius:8px;
+  padding:11px 14px; font-size:15px; line-height:1.3; min-width:112px;
+}
+.flow .st b{display:block;font-size:11px;color:var(--mute);letter-spacing:.08em;margin-bottom:4px;font-weight:700;}
+.flow .st.new{border-color:var(--accent);background:var(--accent-soft);}
+.flow .st.new b{color:var(--accent);}
+.flow .arw{display:flex;align-items:center;color:#C6C2B5;font-size:15px;}
+
+/* 키-값 표 */
+table.kv{width:100%;border-collapse:collapse;font-size:16px;}
+table.kv th,table.kv td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+table.kv thead th{font-size:13px;color:var(--mute);border-bottom:2px solid var(--ink);padding-bottom:9px;letter-spacing:.02em;}
+table.kv tbody th{
+  font-family:'SFMono-Regular',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  font-size:15px;color:var(--ink);font-weight:600;width:150px;
+}
+table.kv td{color:var(--ink-2);line-height:1.45;}
+table.kv tbody tr:last-child td,table.kv tbody tr:last-child th{border-bottom:none;}
+
+/* 경고 */
+.warn{
+  flex:0 0 auto; background:#FBF0E0; border-left:5px solid #B8873A;
+  padding:18px 24px; font-size:17.5px; line-height:1.55; color:#5A4118;
+}
+.warn b{font-weight:700;}
+
+/* 외부 링크. PDF 에서 클릭되고 화면에서도 눈에 띄게 */
+a{color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--accent);font-weight:600;}
+a:hover{background:var(--accent-soft);}
+
+/* 체크리스트 */
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:13px 32px;}
+.chk div{font-size:17px;color:var(--ink-2);padding-left:29px;position:relative;line-height:1.45;}
+.chk div::before{
+  content:""; position:absolute; left:0; top:3px; width:16px; height:16px;
+  border:2px solid var(--accent); border-radius:3px;
+}
+/* ===== 발표 모드 (화면 전용) =====
+   한 장씩 화면을 채우고 방향키로 넘긴다. 클릭·터치로는 넘어가지 않는다.
+   Esc 또는 O 로 전체 스크롤 보기와 전환한다.
+
+   규칙이 전부 @media screen 안에 있어야 한다. 인쇄 경로가 이 코드를 보면
+   PDF 출력이 달라진다. 페이지 번호와 안내도 요소를 만들지 않고 생성 콘텐츠로
+   그린다. 요소를 늘리면 태그드 PDF의 내부 노드 번호가 밀린다. */
+@media screen{
+  body.cs{overflow:hidden;background:#2A2924;}
+  body.cs .deck{padding:0;max-width:none;margin:0;counter-reset:stg;}
+  body.cs .stage{
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(100vw, calc(100vh * 16 / 9));
+    height:min(100vh, calc(100vw * 9 / 16));
+    aspect-ratio:auto; margin:0; box-shadow:none;
+    counter-increment:stg;
+    opacity:0; visibility:hidden; transition:opacity .12s linear;
+  }
+  body.cs .stage.on{opacity:1; visibility:visible;}
+
+  /* 슬라이드 안의 낱개 페이지 번호는 감춘다.
+     화면에서는 아래 "현재 / 전체" 표시 하나만 남긴다. 인쇄에는 그대로 나간다. */
+  body.cs .ft .no{visibility:hidden;}
+
+  /* 슬라이드가 transform 을 갖고 있어 이 고정 위치는 뷰포트가 아니라
+     슬라이드를 기준으로 잡힌다. 원래 페이지 번호가 있던 자리에 그대로 놓인다. */
+  body.cs .stage.on::after{
+    content:counter(stg) " / 32";
+    position:fixed; right:72px; bottom:34px; z-index:20;
+    font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    font-size:14px; font-variant-numeric:tabular-nums; color:#8A8779;
+    pointer-events:none;
+  }
+  body.cs::after{
+    content:"← →  이동   ·   Esc  전체 보기";
+    position:fixed; left:18px; bottom:13px; z-index:20;
+    font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    font-size:12.5px; letter-spacing:.02em; color:#7E7B6E; pointer-events:none;
+  }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- 1 · 챕터 -->
+<div class="stage"><section class="slide section">
+  <div class="row"><div class="num">03</div><div class="time">1시간</div></div>
+  <h2>핵심 기능 탐색</h2>
+  <div class="items">
+    <span>슬래시 커맨드</span><span>도구 호출</span><span>권한 설정</span>
+    <span>컨텍스트 관리</span><span>첫 규칙</span>
+  </div>
+</section></div>
+<!-- 2 · 실습 개요 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 개요</div></div>
+  <main>
+    <h2 class="head">실습 개요: 경비 정산 시스템</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="flow">
+        <div class="st"><b>파일</b>경비 청구 CSV</div><div class="arw">›</div>
+        <div class="st new"><b>입력</b>Loader<br>청구 목록으로</div><div class="arw">›</div>
+        <div class="st new"><b>처리</b>SettlementService<br>규칙으로 판정</div><div class="arw">›</div>
+        <div class="st new"><b>출력</b>Reporter<br>표 문자열로</div><div class="arw">›</div>
+        <div class="st"><b>화면</b>터미널 출력</div>
+      </div>
+      <ul class="pts">
+        <li><b>단방향 전달:</b> 각 단계는 앞 단계의 결과만 받습니다. 처리 단계는 파일을 모르고, 출력 단계는 규칙을 모릅니다.</li>
+        <li><b>교체 가능한 양 끝:</b> 입력과 출력 단계는 바꿔 끼울 수 있고, 가운데 처리 단계는 그대로 남습니다.</li>
+      </ul>
+      <div class="callout">
+        <b>사내 경비 규정 20개에 맞춰 경비 청구를 검사하는 프로그램</b>입니다.<br>
+        규정 한 항목이 규칙 파일 하나가 되고, 이 챕터에서 그중 첫 번째를 만듭니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">2</div></div>
+</section></div>
+<!-- 3 · 실습 전체 안내 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 안내</div></div>
+  <main>
+    <h2 class="head">실습 전체 구성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="flow">
+        <div class="st new"><b>챕터 3</b>앱 골격<br>규칙 R001</div><div class="arw">&rsaquo;</div>
+        <div class="st"><b>챕터 4</b>CLAUDE.md · Hook<br>규칙 R002~R010</div><div class="arw">&rsaquo;</div>
+        <div class="st"><b>챕터 5</b>Skill · Subagent · MCP<br>규칙 R011~R016 · R018</div><div class="arw">&rsaquo;</div>
+        <div class="st"><b>챕터 6</b>보안 설정</div><div class="arw">&rsaquo;</div>
+        <div class="st"><b>챕터 7</b>웹 확장 · 업무 자동화<br>규칙 R017 · R019~R021</div>
+      </div>
+      <ul class="pts">
+        <li><b>저장소 하나로 진행:</b> 챕터 2에서 클론한 <code>C:\Users\Administrator\lab</code> 을 마지막 챕터까지 이어서 씁니다. 챕터마다 새로 시작하지 않습니다.</li>
+        <li><b>함께 쌓이는 두 가지:</b> 하나는 경비 정산 앱의 코드, 다른 하나는 그 코드를 다루는 방식을 적어 두는 <code>.claude/</code> 하네스입니다.</li>
+      </ul>
+      <div class="callout">
+        <b>각 챕터의 작업은 앞 챕터에서 만든 것 위에 쌓입니다.</b><br>
+        규칙은 챕터마다 늘어나고, 그 규칙을 다루는 방식은 하네스에 남습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">3</div></div>
+</section></div>
+<!-- 4 · 이 챕터에서 다루는 내용 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>Claude Code 2.1.x</div></div>
+  <main>
+    <h2 class="head">이 챕터에서 다루는 내용</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ul class="pts">
+        <li><b>관찰 중심 진행:</b> 규칙 하나를 실제로 만들면서 도구 호출, 권한, 컨텍스트가 어떻게 움직이는지 화면에서 확인합니다.</li>
+        <li><b>함께 생기는 앱 골격:</b> 첫 규칙을 만들면 로더와 서비스, 컨테이너, CLI가 최소 형태로 갖춰집니다. 이후 챕터에서는 규칙만 늘어납니다.</li>
+        <li><b><code>CLAUDE.md</code> 없는 첫 구현:</b> 이 챕터에서는 <code>CLAUDE.md</code> 를 만들지 않습니다. 같은 설명을 반복해 보아야 이 파일이 왜 필요한지 알게 됩니다.</li>
+      </ul>
+      <div class="callout">
+        이 챕터가 끝나면 <b><code>uv run pytest</code> 에서 <code>1 passed</code></b> 가 나옵니다.
+        진도는 통과한 테스트 건수로 확인합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">4</div></div>
+</section></div>
+<!-- 5 · 입력창의 접두사 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>슬래시 커맨드</div></div>
+  <main>
+    <h2 class="head">입력창의 접두사</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv">
+        <thead><tr><th>접두사</th><th>하는 일</th></tr></thead>
+        <tbody>
+          <tr><th>/</th><td>커맨드나 Skill 실행</td></tr>
+          <tr><th>!</th><td>셸 명령을 그대로 실행하고 출력을 세션에 넣음</td></tr>
+          <tr><th>@</th><td>파일 경로 자동완성</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>셸 명령을 실행하려고 터미널을 따로 열 필요가 없습니다.</b><br>
+        앞에 <code>!</code> 를 붙이면 Claude Code 안에서 그대로 실행됩니다. <code>!git status</code> 처럼 씁니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">5</div></div>
+</section></div>
+<!-- 6 · 슬래시 커맨드 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>슬래시 커맨드</div></div>
+  <main>
+    <h2 class="head">주요 슬래시 커맨드</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv">
+        <thead><tr><th>커맨드</th><th>하는 일</th></tr></thead>
+        <tbody>
+          <tr><th>/help</th><td>커맨드 목록 표시</td></tr>
+          <tr><th>/context</th><td>컨텍스트 점유 내역 표시</td></tr>
+          <tr><th>/clear</th><td>대화 비우기: 앞의 내용은 사라짐</td></tr>
+          <tr><th>/compact</th><td>대화 요약: 흐름은 유지</td></tr>
+          <tr><th>/model</th><td>모델 선택</td></tr>
+          <tr><th>/usage</th><td>이번 세션의 토큰 사용량과 비용 표시</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>여섯 개만 먼저 익히세요.</b><br>
+        입력창에 <code>/</code> 를 입력하면 목록이 나타납니다. 다른 주요 커맨드는 이후 챕터에서 다룹니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">6</div></div>
+</section></div>
+<!-- 7 · /context -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>컨텍스트</div></div>
+  <main>
+    <h2 class="head">컨텍스트 창의 점유 내역</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split">
+        <div class="codewrap">
+          <div class="cap">/context</div>
+<pre style="font-size:14.5px;"><span class="c">Context Usage</span>  <span class="k">48.5k/967k (5%)</span>
+
+<span class="c">Estimated usage by category</span>
+  System prompt         9.4k  <span class="p">(1.0%)</span>
+  System tools         29.4k  <span class="p">(3.0%)</span>
+  Skills                2.8k  <span class="p">(0.3%)</span>
+  Messages                7k  <span class="p">(0.7%)</span>
+  <span class="k">Free space</span>          <span class="k">885.5k</span>  <span class="p">(91.6%)</span>
+  Autocompact buffer     33k  <span class="p">(3.4%)</span></pre>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b>가장 큰 항목:</b> 도구 정의입니다. 대화를 시작하기 전부터 차 있습니다.</li>
+            <li><b>빠져 있는 Memory files:</b> <code>CLAUDE.md</code> 를 아직 만들지 않아 이 항목이 나타나지 않습니다. 챕터 4에서 생깁니다.</li>
+            <li><b>읽을수록 커지는 Messages:</b> 큰 파일을 통째로 읽게 하지 않는 이유입니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <b>지금 <code>/context</code> 를 실행해 보세요.</b><br>
+        화면에 표시되는 사용량은 설정 상태에 따라 사람마다 다릅니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">7</div></div>
+</section></div>
+<!-- 8 · /clear 와 /compact -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>컨텍스트</div></div>
+  <main>
+    <h2 class="head"><code>/clear</code> 와 <code>/compact</code> 의 차이</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split">
+        <div class="col">
+          <h3>/clear</h3>
+          <ul class="pts">
+            <li>대화를 <b>통째로 비웁니다.</b> 앞에서 읽은 파일도 잊습니다.</li>
+            <li>주제가 완전히 바뀔 때 사용합니다.</li>
+            <li>규칙 하나를 끝내고 다음 규칙으로 넘어갈 때가 그런 경우입니다.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>/compact</h3>
+          <ul class="pts">
+            <li>대화를 <b>요약해 줄입니다.</b> 지금까지의 흐름은 남습니다.</li>
+            <li>같은 작업을 이어 가야 하는데 공간이 부족할 때 사용합니다.</li>
+            <li>공간이 거의 차면 요청하지 않아도 자동으로 실행됩니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn">
+        <b>요약에는 손실이 따릅니다.</b><br>
+        방금 정한 규칙이나 세부 조건은 요약 과정에서 빠질 수 있습니다.
+        중요한 결정은 대화에만 남기지 말고 파일에 기록하세요.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">8</div></div>
+</section></div>
+<!-- 9 · 도구가 도는 방식 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>도구</div></div>
+  <main>
+    <h2 class="head">요청에서 도구 호출까지</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="flow">
+        <div class="st"><b>요청</b>R001을<br>구현해 줘</div><div class="arw">›</div>
+        <div class="st"><b>탐색</b>Bash<br>파일 위치 확인</div><div class="arw">›</div>
+        <div class="st"><b>읽기</b>Read<br>규정과 골격</div><div class="arw">›</div>
+        <div class="st"><b>수정</b>Write · Edit<br>파일 생성</div><div class="arw">›</div>
+        <div class="st"><b>검증</b>Bash<br>테스트 실행</div>
+      </div>
+      <ul class="pts">
+        <li><b>좁혀서 읽는 방식:</b> 파일을 전부 열지 않고 검색으로 필요한 부분만 읽습니다.</li>
+        <li><b>스스로 하는 검증:</b> 테스트가 실패하면 결과를 보고 다시 고칩니다.</li>
+      </ul>
+      <div class="callout">
+        <b>통과 조건은 요청에 함께 적어 주세요.</b><br>
+        <code>구현해 줘</code> 만 적어도 검증까지 시도하지만, 무엇을 통과로 볼지는 Agent가 정합니다.
+        <code>테스트를 만들고 통과할 때까지 고쳐 줘</code> 처럼 조건까지 적어 주면 판정 기준이 매번 같아집니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">9</div></div>
+</section></div>
+<!-- 10 · 도구 호출 읽는 법 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>도구</div></div>
+  <main>
+    <h2 class="head">도구 호출 화면 구성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="codewrap">
+          <div class="cap">진행 중 화면</div>
+<pre><span class="p">●</span> Read(docs/경비규정.md)
+  <span class="c">└ Read 161 lines</span>
+
+<span class="p">●</span> Write(rules/r001_required_fields.py)
+  <span class="k">Do you want to create this file?</span>
+  <span class="k">❯ 1. Yes</span>
+    2. Yes, and don't ask again
+    3. No, tell Claude what to do</pre>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b>호출 대상:</b> 괄호 안의 경로가 실제로 읽거나 쓰는 대상입니다. 의도한 파일이 아니면 <code>Esc</code> 로 중단하세요.</li>
+            <li><b>결과 요약:</b> 아래 들여쓴 줄에 읽은 줄 수나 검색 건수가 나옵니다.</li>
+            <li><b>승인 대상:</b> 프로젝트 안의 파일을 읽는 도구는 묻지 않고 실행되고, 파일을 바꾸는 도구와 셸 명령에만 승인 프롬프트가 나타납니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <b><code>Esc</code> 는 누른 횟수에 따라 되돌리는 범위가 다릅니다.</b><br>
+        한 번 누르면 진행 중인 도구 호출이 중단되고, 두 번 누르면 편집 도구가 바꾼 파일이 직전 상태로 복구됩니다.
+        셸 명령으로 생긴 변경은 복구 대상이 아닙니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">10</div></div>
+</section></div>
+<!-- 11 · 권한 모드 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>권한</div></div>
+  <main>
+    <h2 class="head">권한 모드 네 가지</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="cmp">
+        <colgroup><col><col class="hi"><col><col></colgroup>
+        <thead><tr><th></th><th class="hi">파일 편집</th><th>명령 실행</th><th>사용 상황</th></tr></thead>
+        <tbody>
+          <tr><th>manual</th><td>매번 확인</td><td>매번 확인</td><td>기본값. 무엇을 묻는지 살펴볼 때</td></tr>
+          <tr><th>accept edits</th><td>자동 승인</td><td>매번 확인</td><td>편집이 반복될 때</td></tr>
+          <tr><th>plan</th><td>하지 않음</td><td>하지 않음</td><td>먼저 계획만 볼 때</td></tr>
+          <tr><th>auto</th><td>자동 승인</td><td>안전 검사 후 진행</td><td>맡겨 두고 결과를 볼 때</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>이 챕터는 manual 로 진행합니다.</b><br>
+        어떤 도구가 승인을 요구하는지 확인하기 위해서입니다. 모드는 <code>Shift+Tab</code> 으로 바꿉니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">11</div></div>
+</section></div>
+<!-- 12 · 승인 프롬프트 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>권한</div></div>
+  <main>
+    <h2 class="head">승인 프롬프트의 선택지</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ul class="pts">
+        <li><b><code>Yes</code>:</b> 이 호출만 허용합니다. 다음에 같은 도구가 호출되면 승인 프롬프트가 다시 나타납니다.</li>
+        <li><b><code>Yes, and don't ask again for &hellip;</code>:</b> 같은 형태의 호출을 허용하는 규칙을
+            <code>.claude/settings.local.json</code> 에 기록합니다. 다음 세션에도 남습니다.</li>
+        <li><b><code>No</code>:</b> 이 호출을 거절합니다. 무엇을 다르게 할지 이어서 적어 주면 됩니다.</li>
+      </ul>
+      <div class="callout">
+        <b>두 번째 선택지가 설정 파일을 만드는 유일한 자동 경로입니다.</b><br>
+        나머지 규칙은 파일을 직접 열어 적습니다. 어떤 파일에 쓸지는 이어서 다룹니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">12</div></div>
+</section></div>
+<!-- 13 · 설정 파일 세 곳 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>권한</div></div>
+  <main>
+    <h2 class="head">설정 파일 세 곳</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="cmp">
+        <thead><tr><th>파일</th><th>적용 범위</th><th>저장소 커밋</th></tr></thead>
+        <tbody>
+          <tr><th><code>~/.claude/settings.json</code></th><td>사용자의 모든 프로젝트</td><td>대상 아님</td></tr>
+          <tr><th><code>.claude/settings.json</code></th><td>이 프로젝트. 팀 전체가 공유</td><td>커밋함</td></tr>
+          <tr><th><code>.claude/settings.local.json</code></th><td>이 프로젝트. 개인 전용</td><td>커밋하지 않음</td></tr>
+        </tbody>
+      </table>
+      <div class="warn">
+        <b>팀이 공유하는 규칙과 개인 설정을 섞지 마세요.</b><br>
+        본인 계정에서만 유효한 경로나 임시 허용은 <code>settings.local.json</code> 에 둡니다.
+        이 구분은 챕터 6에서 API 키를 다룰 때 다시 나옵니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">13</div></div>
+</section></div>
+<!-- 14 · permissions 규칙 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>권한</div></div>
+  <main>
+    <h2 class="head">permissions 규칙 표기</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap">
+        <div class="cap">.claude/settings.local.json &nbsp;·&nbsp; 자동 생성이 아니라 직접 작성하는 예시</div>
+<pre style="font-size:14px;"><span class="p">{</span> <span class="k">"permissions"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"allow"</span><span class="p">:</span> <span class="p">[</span><span class="s">"Bash(uv run pytest:*)"</span><span class="p">,</span> <span class="s">"Read(docs/**)"</span><span class="p">],</span>
+    <span class="k">"deny"</span><span class="p">:</span>  <span class="p">[</span><span class="s">"Bash(git push:*)"</span><span class="p">,</span> <span class="s">"Edit(tests/golden/**)"</span><span class="p">]</span>
+<span class="p">} }</span></pre>
+      </div>
+      <ul class="pts">
+        <li>규칙은 <b>도구 이름과 대상</b>으로 씁니다. <code>Bash</code> 는 명령을, <code>Read</code> 와 <code>Edit</code> 는 경로를 받습니다.
+            <b><code>deny</code> 가 <code>allow</code> 보다 우선</b>이므로 둘 다 해당하면 차단됩니다.</li>
+        <li><b>명령 규칙의 접미사 표기:</b> 명령 뒤에는 <code>:*</code> 를 붙입니다. <code>Bash(git status *)</code> 처럼 공백으로 적으면 인자 없이 실행한 <code>git status</code> 에는 규칙이 적용되지 않습니다.</li>
+      </ul>
+      <div class="callout">
+        <b>도구와 경로 단위로 Agent의 활동 범위를 정할 수 있습니다.</b><br>
+        <code>deny</code> 에 디렉터리나 파일 경로를 적어 두면 수정 요청이 들어와도 그 경로는 바뀌지 않습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">14</div></div>
+</section></div>
+<!-- 15 · 저장소 구조 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 대상</div></div>
+  <main>
+    <h2 class="head">실습 저장소의 구성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="codewrap">
+          <div class="cap">C:\Users\Administrator\lab</div>
+<pre><span class="c">docs/       </span>요구사항 · 경비규정 · 데이터 스키마
+<span class="c">src/</span>
+  <span class="c">core/domain/</span>      models.py · rules/base.py
+  <span class="c">core/service/</span>     input · usecase · output
+  <span class="c">application/</span>      container.py · cli/
+<span class="c">tests/</span>
+  <span class="c">rules/fixtures/</span>   r001.csv ~ r020.csv
+  <span class="c">golden/base/</span>      input.csv · expected.json
+<span class="c">samples/    </span>부서별 청구 파일 5개</pre>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b>선언만 있는 골격:</b> 클래스와 메서드 이름, 상속 관계만 정의돼 있습니다.</li>
+            <li><b>고정된 이름:</b> 테스트와 이후 예제가 이 이름을 참조하므로 바꾸지 않습니다.</li>
+            <li><b>아직 없는 규칙 파일:</b> <code>core/domain/rules/</code> 아래에 규칙마다 하나씩 만듭니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <b><code>claude</code> 를 실행한 폴더가 프로젝트 루트가 됩니다.</b><br>
+        <code>cd C:\Users\Administrator\lab</code> 으로 이동한 뒤 <code>claude</code> 를 실행하세요.
+        Claude Code는 파일과 설정을 이 경로 기준으로 찾습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">15</div></div>
+</section></div>
+<!-- 16 · 문서 세 개 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 대상</div></div>
+  <main>
+    <h2 class="head">실습 명세 문서 세 개</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <table class="kv">
+        <thead><tr><th>파일</th><th>내용</th><th>참고 시점</th></tr></thead>
+        <tbody>
+          <tr><th>요구사항.md</th><td>처리 흐름, 프로젝트 구조, 테스트가 기대하는 계약</td><td>무엇을 어디에 만들지 정할 때</td></tr>
+          <tr><th>데이터-스키마.md</th><td>청구 파일 형식, 도메인 모델 네 종류와 그 속성</td><td>모델을 채울 때</td></tr>
+          <tr><th>경비규정.md</th><td>검증할 규정 20개. 항목마다 조건과 반려 문구</td><td>규칙을 구현할 때</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>문서에 명시된 컬럼명을 그대로 데이터 모델의 속성명으로 쓰세요.</b><br>
+        CSV 헤더가 <code>claim_id</code> 이면 <code>Expense</code> 의 속성도 <code>claim_id</code> 로 정의합니다.
+        둘 사이에 대응표를 두지 않습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">16</div></div>
+</section></div>
+<!-- 17 · 실습 1 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 1</div></div>
+  <main>
+    <h2 class="head">실습 1 · 도메인 모델 채우기</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps">
+        <li><code>C:\Users\Administrator\lab</code> 에서 <code>claude</code> 실행</li>
+        <li><b>문서 읽기 요청:</b> <code>docs/데이터-스키마.md 를 읽고 구조를 파악해 줘</code></li>
+        <li><b>모델 채우기 요청:</b> <code>스키마 문서에 맞춰 src/core/domain/models.py 의 네 클래스를 채워 줘</code></li>
+        <li>승인 프롬프트 내용 확인 후 승인</li>
+        <li><code>uv run python -c "from core.domain.models import Expense"</code> 로 임포트 확인</li>
+      </ol>
+      <div class="callout">
+        <b>정확한 위임의 전제는 문서화입니다.</b><br>
+        두 요청 어디에도 속성 이름과 타입이 없습니다. 그 내용이 문서에 이미 적혀 있어서
+        &ldquo;스키마 문서에 맞춰&rdquo; 한마디면 충분합니다.
+        요구사항을 문서로 정리해 둘수록 맡길 수 있는 일의 범위가 넓어집니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">17</div></div>
+</section></div>
+<!-- 18 · 실습 2 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 2</div></div>
+  <main>
+    <h2 class="head">실습 2 · 권한 규칙 만들기</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps">
+        <li><b>명령 실행 요청:</b> <code>uv run pytest 를 실행해 줘</code></li>
+        <li>프롬프트에서 <code>Yes, and don't ask again</code> 선택</li>
+        <li><b>생성 확인:</b> <code>.claude/settings.local.json</code> 이 생기고 <code>allow</code> 에 규칙이 추가됐는지 확인</li>
+        <li><b>골든 데이터 잠금:</b> <code>.claude/settings.local.json</code> 을 직접 열어 <code>deny</code> 에 <code>Edit(tests/golden/**)</code> 추가</li>
+        <li><code>tests/golden</code> 아래에 파일을 만들어 달라고 요청해 차단 여부 확인</li>
+      </ol>
+      <div class="callout">
+        <b>골든 데이터는 정답 판정의 근거이므로 사람도 Agent도 수정하지 않습니다.</b><br>
+        이 차단 규칙은 구현이 틀렸을 때 정답을 고쳐 맞추는 일을 막습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">18</div></div>
+</section></div>
+<!-- 19 · 실습 3 입력 계층 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 3</div></div>
+  <main>
+    <h2 class="head">실습 3 · 입력 계층 채우기</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <ol class="steps">
+            <li><code>src/core/service/input/base.py</code> 를 열어 두 클래스의 역할 확인</li>
+            <li><b>공통 동작 요청:</b> <code>FileLoader 의 load 를 채워 줘</code></li>
+            <li><b>형식별 구현 요청:</b> <code>스키마 문서에 맞춰 CsvLoader 를 채워 줘</code></li>
+            <li>파일을 여는 코드가 <code>CsvLoader</code> 에 중복되지 않았는지 확인</li>
+          </ol>
+        </div>
+        <div class="col">
+          <table class="kv">
+            <thead><tr><th>구현할 메서드</th><th>하는 일</th></tr></thead>
+            <tbody>
+              <tr><th>FileLoader.load</th><td>파일을 읽어 <code>parse</code> 에 넘김</td></tr>
+              <tr><th>CsvLoader.supports</th><td>확장자가 <code>.csv</code> 인지 판별</td></tr>
+              <tr><th>CsvLoader.parse</th><td>헤더와 행을 해석해 <code>Expense</code> 생성</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="callout">
+        <b><code>데이터-스키마.md</code> 에는 인코딩과 그 근거가 함께 적혀 있습니다.</b><br>
+        요청에 인코딩을 적지 않아도 <code>utf-8-sig</code> 로 열리는 것은 그 때문입니다.
+        Excel에서 저장한 CSV라 <code>utf-8</code> 로 읽으면 첫 컬럼명이 깨진다는 설명까지 들어 있습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">19</div></div>
+</section></div>
+<!-- 20 · 실습 4 R001 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 4</div></div>
+  <main>
+    <h2 class="head">R001 규정과 구현 방침</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split">
+        <div class="codewrap">
+          <div class="cap">docs/경비규정.md</div>
+<pre><span class="c">### R001 · 필수 항목 누락 (단건)</span>
+
+claim_id  employee_id  department
+used_date  claim_date  expense_type
+amount  payment_method  merchant
+
+<span class="c">중 하나라도 비어 있으면 반려합니다.</span>
+
+<span class="s">&gt; 필수 항목이 비어 있습니다: {항목명}</span></pre>
+        </div>
+        <div class="col">
+          <ul class="pts">
+            <li><b>규칙 하나에 파일 하나:</b> <code>rules/r001_required_fields.py</code> 로 만듭니다.</li>
+            <li><b>규칙 이름 속성:</b> 규정 제목을 <code>name</code> 에 그대로 씁니다.</li>
+            <li><b>한 건만 보는 판정:</b> <code>RowRule</code> 을 상속합니다.</li>
+            <li><b>함께 구현할 판정 서비스:</b> <code>RuleBasedSettlementService</code> 의 <code>settle</code> 도 이번에 채웁니다. 비어 있으면 규칙이 호출되지 않습니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <b><code>Violation</code> 의 속성은 <code>데이터-스키마.md</code> 에 정해져 있습니다.</b><br>
+        규칙 코드와 이름도 속성으로 정의돼 있고, 값은 규칙이 채웁니다.
+        그래서 출력 계층은 이름을 따로 관리하지 않습니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">20</div></div>
+</section></div>
+<!-- 21 · 조립과 등록 지점 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 4</div></div>
+  <main>
+    <h2 class="head">조립과 등록 지점</h2>
+    <div class="headrule"></div>
+    <div class="body snug">
+      <ul class="pts">
+        <li><b>조립:</b> 규칙과 로더, 리포터 같은 구현체를 골라 서비스에 끼우는 일입니다. 이 코드를
+            <code>container.py</code> 로 모으면 나머지 코드는 구현체를 몰라도 됩니다.</li>
+        <li><b>두 벌로 분리:</b> 조립 코드는 앱용과 테스트용을 따로 둡니다.</li>
+        <li><b>수동 등록:</b> 규칙 파일을 폴더에서 자동으로 찾지 않습니다. 규칙을 만들 때마다 아래 세 곳을 직접 수정합니다.</li>
+      </ul>
+      <table class="kv">
+        <thead><tr><th>위치</th><th>작업</th></tr></thead>
+        <tbody>
+          <tr><th>rules/rXXX.py</th><td>규칙 구현</td></tr>
+          <tr><th>application/container.py</th><td>앱 조립 코드에 등록</td></tr>
+          <tr><th>tests/container.py</th><td>테스트 조립 코드에 등록. 픽스처와 테스트도 작성</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <b>규칙이 20개로 늘면 같은 절차를 그만큼 되풀이해야 하고, 그때마다 같은 설명을 다시 적어야 합니다.</b><br>
+        그 반복을 줄이는 것이 챕터 4와 챕터 5의 목표입니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div>규칙 구현은 실습 4, 앱 조립은 실습 5, 테스트 조립은 실습 6에서 진행합니다.</div><div class="no">21</div></div>
+</section></div>
+<!-- 22 · 실습 4 · 규칙 R001 구현 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 4</div></div>
+  <main>
+    <h2 class="head">실습 4 · 규칙 R001 구현</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps">
+        <li><b>규칙 구현 요청:</b> <code>경비규정 R001 을 구현해 줘. 파일은 rules/r001_required_fields.py 로 만들어 줘</code></li>
+        <li>만들어진 <code>rules/r001_required_fields.py</code> 를 열어 상속한 클래스가 <code>RowRule</code> 인지 확인</li>
+        <li><b>판정 서비스 요청:</b> <code>RuleBasedSettlementService 의 settle 을 채워 줘. 요구사항 문서대로 주입받은 규칙을 단건과 다건으로 나눠 적용해 줘</code></li>
+      </ol>
+      <div class="callout">
+        <b>요청에 규정 문구를 옮겨 적지 않습니다.</b><br>
+        규정 문서가 저장소에 있으므로 &ldquo;경비규정 R001&rdquo; 한마디로 판정 조건과 반려 문구가 정해집니다.
+        판정 결과가 규정과 다르면 요청에 조건을 덧붙이는 대신 규정 문서를 고칩니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">22</div></div>
+</section></div>
+<!-- 23 · 실습 6 앱 실행 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 5</div></div>
+  <main>
+    <h2 class="head">실습 5 · 앱 실행 구성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split l">
+        <div class="col">
+          <ol class="steps">
+            <li><b>출력 계층 요청:</b> <code>ConsoleReporter 의 format 을 채워 줘</code></li>
+            <li><b>조립 요청:</b> <code>application/container.py 의 세 함수를 채워 줘</code></li>
+            <li><b>진입점 요청:</b> <code>cli/main.py 의 main 을 채워 줘. 로더와 리포터, 서비스는 container.py 의 세 함수에서 받아 쓰고, 확장자로 입력 형식을 정하는 일은 main 안에서 처리해 줘</code></li>
+            <li><b>실행:</b> <code>uv run settle samples\영업1팀.csv</code></li>
+          </ol>
+        </div>
+        <div class="col">
+          <table class="kv">
+            <thead><tr><th>구현 대상</th><th>하는 일</th></tr></thead>
+            <tbody>
+              <tr><th>ConsoleReporter</th><td>판정 결과를 표 문자열로 변환</td></tr>
+              <tr><th>build_loader</th><td>입력 형식에 맞는 로더 선택</td></tr>
+              <tr><th>build_service</th><td>규칙을 넣은 서비스 조립</td></tr>
+              <tr><th>build_reporter</th><td>출력 형식에 맞는 리포터 선택</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="callout">
+        <b>진입점은 구현체를 직접 고르지 않습니다.</b><br>
+        <code>main</code> 안에서 <code>CsvLoader</code> 를 바로 부르면 형식을 하나 더할 때마다 진입점을 고쳐야 합니다.
+        조립을 거치면 진입점은 형식 이름만 넘기고, 어떤 구현체를 쓸지는 <code>container.py</code> 한 곳에서 정해집니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">23</div></div>
+</section></div>
+<!-- 24 · 실행 결과 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 5</div></div>
+  <main>
+    <h2 class="head">실습 5 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap">
+        <div class="cap">uv run settle samples\영업1팀.csv</div>
+<pre>청구ID         성명    사용일자    계정과목    금액     판정  위반
+EXP-2026-0172  김민준  2026-05-01  접대비      180,000  통과
+EXP-2026-0173  이서연  2026-05-04  식비         26,000  통과
+EXP-2026-0221  장태현  2026-06-22  소모품비     31,000  <span class="k">반려</span>  <span class="k">R001</span>
+
+<span class="c">전체 51건 · 통과 50 · 반려 1</span>
+<span class="c">R001 필수 항목 누락  1건</span></pre>
+      </div>
+      <div class="callout">
+        <b>규칙을 추가할수록 이 표의 반려가 늘어납니다.</b><br>
+        지금은 R001만 검사하므로 51건 가운데 1건만 반려됩니다. 요약에 보이는 규칙 이름은
+        <code>Violation</code> 에 담긴 값입니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">24</div></div>
+</section></div>
+<!-- 25 · 실습 5-1 tests/container.py -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 6</div></div>
+  <main>
+    <h2 class="head">테스트 조립 코드</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap">
+        <div class="cap">tests/container.py &nbsp;·&nbsp; 규칙 등록과 서비스 조립</div>
+<pre><span class="k">from</span> core.domain.rules.r001_required_fields <span class="k">import</span> R001
+<span class="k">from</span> core.service.usecase.settlement <span class="k">import</span> RuleBasedSettlementService
+
+<span class="k">def</span> all_rules():        <span class="c"># 구현한 규칙을 여기에 등록</span>
+    <span class="k">return</span> [R001()]
+
+<span class="k">def</span> build_service(rules=<span class="k">None</span>):
+    <span class="k">return</span> RuleBasedSettlementService(
+        all_rules() <span class="k">if</span> rules <span class="k">is None</span> <span class="k">else</span> rules)</pre>
+      </div>
+      <div class="callout">
+        <b>테스트 조립 코드는 앱 조립 코드와 따로 둡니다.</b><br>
+        앱 조립은 로더와 리포터까지 끼우지만 테스트는 규칙만 있으면 됩니다.
+        테스트가 앱 조립에 의존하면 CLI나 웹이 바뀔 때 테스트도 함께 고쳐야 합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">25</div></div>
+</section></div>
+<!-- 26 · 실습 5-2 conftest -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 6</div></div>
+  <main>
+    <h2 class="head">테스트 픽스처 분리</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="codewrap">
+        <div class="cap">tests/conftest.py &nbsp;·&nbsp; pathlib, pytest 임포트 생략</div>
+<pre><span class="k">from</span> container <span class="k">import</span> build_service
+<span class="k">from</span> core.service.input.csv_loader <span class="k">import</span> CsvLoader
+
+FIXTURES = Path(__file__).parent / <span class="s">"rules"</span> / <span class="s">"fixtures"</span>
+<span class="p">@pytest.fixture</span>
+<span class="k">def</span> settle():
+    <span class="k">def</span> _settle(rules, fixture_name):
+        expenses = CsvLoader().load(FIXTURES / fixture_name)
+        <span class="k">return</span> build_service(rules).settle(expenses)
+    <span class="k">return</span> _settle</pre>
+      </div>
+      <div class="callout">
+        <b>픽스처는 테스트마다 반복되는 준비 과정을 모아 둔 코드입니다.</b>
+        <code>conftest.py</code> 에 두면 같은 폴더의 모든 테스트가 이 픽스처를 함께 씁니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">26</div></div>
+</section></div>
+<!-- 27 · 실습 6 · 테스트 작성 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 6</div></div>
+  <main>
+    <h2 class="head">실습 6 · 테스트 작성</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <ol class="steps">
+        <li><b>테스트 조립 요청:</b> <code>tests/container.py 에 테스트용 조립 코드를 만들어 줘. 구현한 규칙을 등록하고, 규칙 목록을 인자로 받으면 등록한 규칙 대신 그 목록을 쓰게 해 줘</code></li>
+        <li><b>픽스처 요청:</b> <code>tests/conftest.py 에 픽스처를 만들어 줘. 규칙 목록과 픽스처 파일 이름을 받아 판정 결과를 돌려주게 해 줘</code></li>
+        <li><b>테스트 요청:</b> <code>tests/rules/test_r001.py 를 만들어 줘. r001.csv 네 행의 판정 결과를 기댓값과 대조하게 해 줘</code></li>
+        <li><code>uv run pytest</code> 로 <code>1 passed</code> 확인</li>
+      </ol>
+      <div class="callout">
+        <b>픽스처 데이터는 저장소에 이미 있습니다.</b><br>
+        <code>tests/rules/fixtures/r001.csv</code> 에 위반 두 건과 통과 두 건이 들어 있습니다.
+        만드는 것은 그 파일을 읽어 판정과 기댓값을 대조하는 코드입니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">27</div></div>
+</section></div>
+<!-- 28 · 실습 5-3 첫 초록불 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>실습 6</div></div>
+  <main>
+    <h2 class="head">실습 6 실행 결과</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split">
+        <div class="codewrap">
+          <div class="cap">tests/rules/test_r001.py</div>
+<pre><span class="k">from</span> core.domain.rules.r001_required_fields <span class="k">import</span> R001
+
+
+<span class="k">def</span> test_r001(settle):
+    result = settle([R001()], <span class="s">"r001.csv"</span>)
+    codes = [[v.code <span class="k">for</span> v <span class="k">in</span> j.violations]
+             <span class="k">for</span> j <span class="k">in</span> result.judgements]
+    <span class="k">assert</span> codes == [[<span class="s">"R001"</span>], [<span class="s">"R001"</span>], [], []]</pre>
+        </div>
+        <div class="codewrap">
+          <div class="cap">uv run pytest</div>
+<pre>collected 1 item
+
+tests/rules/test_r001.py <span class="s">.</span>       [100%]
+
+<span class="s">========= 1 passed in 0.03s =========</span></pre>
+        </div>
+      </div>
+      <div class="callout">
+        <b>규칙 하나만 넣고 실행합니다.</b><br>
+        픽스처에 다른 규칙 위반이 섞여도 이 테스트는 영향을 받지 않고,
+        실패하면 원인이 그 규칙 하나로 좁혀집니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">28</div></div>
+</section></div>
+<!-- 29 · 개인정보 관찰 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>개인정보</div></div>
+  <main>
+    <h2 class="head">세션 기록 파일에 남은 개인정보</h2>
+    <div class="headrule"></div>
+    <div class="body snug">
+      <ol class="steps tight">
+        <li><b>개인정보 검색 요청:</b> <code>이번 세션의 기록 파일(C:\Users\Administrator\.claude\projects\ 아래 .jsonl)에서 주민등록번호 패턴(\d{6}-\d{7}), 카드번호 패턴(\d{4}-\d{4}-\d{4}-\d{4}), 계좌번호로 보이는 패턴(은행명 + 숫자-숫자-숫자 형태)을 찾아서 찾은 값을 콘솔에 출력해 줘</code></li>
+        <li>화면에 출력된 값이 <code>samples\영업1팀.csv</code> 의 원본과 일치하는지 확인</li>
+        <li>그 값이 규칙 판정에 한 번도 쓰이지 않았음을 확인</li>
+      </ol>
+      <div class="callout" style="font-size:16px;padding:14px 20px;line-height:1.5;">
+        <b>찾은 값이 세션 기록에 남았다는 것은 이미 Claude API로 전송됐다는 뜻입니다.</b><br>
+        세션 기록 파일은 모델과 주고받은 대화를 그대로 적어 둔 파일입니다. 도구가 돌려준 파일 내용도
+        대화의 일부이므로, 그 뒤 요청마다 같은 값이 다시 전송됩니다.
+      </div>
+      <div class="warn" style="font-size:16px;padding:14px 20px;line-height:1.5;">
+        <b>이 챕터에서는 차단이나 항목 제외를 적용하지 않습니다.</b><br>
+        계좌번호와 주민등록번호는 지급 처리에 필요해 원본에 함께 들어 있습니다.
+        어떤 경로를 막고 어떤 항목을 가릴지는 챕터 6에서 판단 기준을 세운 뒤 설정합니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">29</div></div>
+</section></div>
+<!-- 30 · 컨텍스트가 차오를 때 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>컨텍스트</div></div>
+  <main>
+    <h2 class="head">컨텍스트 정리 시점</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="split">
+        <div class="col">
+          <h3>지금까지 쌓인 내역</h3>
+          <ul class="pts">
+            <li>읽은 문서 세 개와 소스 파일 여러 개</li>
+            <li>실패한 테스트 출력과 다시 고친 이력</li>
+            <li>승인 프롬프트에서 주고받은 대화</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>이 시점에 수행할 작업</h3>
+          <ul class="pts">
+            <li><code>/context</code> 로 처음과 비교</li>
+            <li>다음 규칙으로 넘어가기 전 <code>/clear</code> 실행</li>
+            <li>같은 규칙을 이어 갈 때 <code>/compact</code> 실행</li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn">
+        <b><code>/clear</code> 를 실행하면 방금 정한 계층 규칙과 컨벤션도 함께 사라집니다.</b><br>
+        다음 규칙에서 같은 설명을 처음부터 다시 하게 됩니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">30</div></div>
+</section></div>
+<!-- 31 · 되짚기 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>정리</div></div>
+  <main>
+    <h2 class="head">반복되는 절차 정리</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="flow">
+        <div class="st"><b>1</b>규정 읽기</div><div class="arw">›</div>
+        <div class="st"><b>2</b>규칙 파일 생성</div><div class="arw">›</div>
+        <div class="st"><b>3</b>컨테이너 등록</div><div class="arw">›</div>
+        <div class="st"><b>4</b>픽스처 확인</div><div class="arw">›</div>
+        <div class="st"><b>5</b>테스트 작성</div><div class="arw">›</div>
+        <div class="st"><b>6</b>테스트 등록</div><div class="arw">›</div>
+        <div class="st"><b>7</b>실행</div>
+      </div>
+      <ul class="pts">
+        <li><b>규칙마다 거치는 일곱 단계:</b> 규칙 하나를 만들 때마다 이 순서를 그대로 따르며 같은 설명을 다시 적습니다.</li>
+        <li><b>고정된 전제:</b> 계층 규칙, 파일 위치, 등록 지점은 프로젝트가 이미 정해 둔 사항입니다.</li>
+      </ul>
+      <div class="callout">
+        <b>챕터 4에서 이 설명을 <code>CLAUDE.md</code> 에 옮깁니다.</b>
+        등록을 빠뜨리면 곧바로 잡아내는 장치도 Hook으로 만듭니다.
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">31</div></div>
+</section></div>
+<!-- 32 · 확인 항목 -->
+<div class="stage"><section class="slide">
+  <div class="hd"><div><span class="mod">챕터 3</span> &nbsp;핵심 기능 탐색</div><div>확인</div></div>
+  <main>
+    <h2 class="head">확인 항목</h2>
+    <div class="headrule"></div>
+    <div class="body">
+      <div class="chk">
+        <div><code>/context</code> 실행 후 사용량 확인</div>
+        <div><code>/clear</code> 와 <code>/compact</code> 차이 이해</div>
+        <div><code>models.py</code> 네 클래스 속성 작성 완료</div>
+        <div><code>FileLoader</code> · <code>CsvLoader</code> 구현 완료</div>
+        <div>권한 모드 네 가지 차이 이해</div>
+        <div><code>.claude/settings.local.json</code> 생성 확인</div>
+        <div><code>deny</code> 규칙으로 골든 데이터 수정·생성 차단 확인</div>
+        <div>규칙 <code>R001</code> 과 <code>settle</code> 구현, 조립 코드 두 곳에 등록 완료</div>
+        <div><code>uv run pytest</code> 에서 <code>1 passed</code> 확인</div>
+        <div><code>uv run settle</code> 실행 결과 표 확인</div>
+      </div>
+    </div>
+  </main>
+  <div class="ft"><div></div><div class="no">32</div></div>
+</section></div>
+
+
+
+</div>
+
+<script>
+/* 창 너비에 맞춰 1280 캔버스를 스케일. ResizeObserver 로 실시간 반응. */
+(function(){
+  var deck=document.querySelector('.deck'), stage=document.querySelector('.stage');
+  function fit(){ if(!stage) return;
+    document.documentElement.style.setProperty('--s', stage.clientWidth/1280); }
+  new ResizeObserver(fit).observe(deck);
+  window.addEventListener('load',fit); fit();
+  window.addEventListener('beforeprint',function(){document.documentElement.style.setProperty('--s',1);});
+  window.addEventListener('afterprint',fit);
+})();
+/* 발표 모드. 화살표 키로만 넘어간다(클릭·터치 전환 없음).
+   Esc 또는 O 로 전체 스크롤 보기와 전환한다.
+   인쇄는 @media print 가 맡으므로 여기서 개입하지 않는다.
+
+   맥 노트북에는 Home/End 키가 없다. Fn+← / Fn+→ 가 같은 이벤트를 보낸다. */
+(function(){
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  if(!stages.length) return;
+  var i=0, on=true;
+
+  function scale(el){
+    if(el && el.clientWidth)
+      document.documentElement.style.setProperty('--s', el.clientWidth/1280);
+  }
+  function render(){
+    for(var n=0;n<stages.length;n++) stages[n].classList.toggle('on', n===i);
+    scale(stages[i]);
+  }
+  function go(d){ var t=i+d; if(t<0||t>=stages.length) return; i=t; render(); }
+  function mode(v){
+    on=v; document.body.classList.toggle('cs', v);
+    if(!v) for(var n=0;n<stages.length;n++) stages[n].classList.remove('on');
+    /* 클래스가 반영된 뒤에 크기를 재야 한다. 바로 재면 이전 레이아웃 값이 나온다. */
+    requestAnimationFrame(function(){
+      if(on){ render(); return; }
+      scale(stages[0]);
+      stages[i].scrollIntoView({block:'start'});
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    /* e.key 는 한글 입력 상태에서 'ㅐ' 로 들어온다. 자판과 무관한 e.code 를 본다. */
+    if(e.code==='KeyO'||e.key==='Escape'){ mode(!on); e.preventDefault(); return; }
+    if(!on) return;
+    var k=e.key;
+    if(k==='ArrowRight'||k==='ArrowDown'||k==='PageDown'||k===' '){ go(1); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp'){ go(-1); e.preventDefault(); }
+    else if(k==='Home'){ i=0; render(); e.preventDefault(); }
+    else if(k==='End'){ i=stages.length-1; render(); e.preventDefault(); }
+  });
+  window.addEventListener('resize', function(){ if(on) render(); });
+  mode(true);
+})();
+</script>
+
+<script>
+/* 챕터 경계에서 앞뒤 파일로 넘어간다. 게시본에만 붙는다. */
+(function(){
+  var PREV="chapter-02.html", NEXT="chapter-04.html";
+  function stages(){ return [].slice.call(document.querySelectorAll('.stage')); }
+  document.addEventListener('keydown', function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    /* 전체 보기 전환은 O 가 맡는다. Esc 는 목차로 나간다. */
+    if(e.key==='Escape'){
+      e.preventDefault(); e.stopPropagation(); location.href='index.html'; return;
+    }
+    if(!document.body.classList.contains('cs')) return;
+    var st=stages(); if(!st.length) return;
+    var k=e.key;
+    var fwd=(k==='ArrowRight'||k==='ArrowDown'||k==='PageDown'||k===' ');
+    var back=(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp');
+    if(fwd && NEXT && st[st.length-1].classList.contains('on')){
+      e.preventDefault(); e.stopPropagation(); location.href=NEXT;
+    } else if(back && PREV && st[0].classList.contains('on')){
+      e.preventDefault(); e.stopPropagation(); location.href=PREV+'#end';
+    }
+  }, true);
+  if(location.hash==='#end'){
+    /* presenter.js 가 End 키를 마지막 슬라이드로 읽는다. */
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        document.dispatchEvent(new KeyboardEvent('keydown', {key:'End'}));
+      }, 0);
+    });
+  }
+})();
+</script>
+</body>
+</html>
+<!-- deck-src 86d9056a9e365e13 -->
